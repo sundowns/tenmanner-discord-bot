@@ -6,6 +6,7 @@ extern crate lazy_static;
 
 pub mod commands;
 pub mod config;
+pub mod util;
 
 use crate::commands::{CommandRunner, SlashCommands};
 use crate::config::{load_config, AppConfig};
@@ -39,6 +40,8 @@ impl EventHandler for Handler {
                 }
                 Err(_) => format!("Unknown command: {}", raw_command_name).to_string(),
             };
+
+            println!("{}", immediate_response_content);
 
             if let Err(why) = command
                 .create_interaction_response(&ctx.http, |response| {
