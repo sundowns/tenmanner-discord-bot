@@ -8,8 +8,7 @@ pub mod commands;
 pub mod config;
 
 use crate::commands::{CommandRunner, SlashCommands};
-use crate::config::AppConfig;
-use dotenv::dotenv;
+use crate::config::{load_config, AppConfig};
 use serenity::async_trait;
 use serenity::model::gateway::Ready;
 use serenity::model::id::GuildId;
@@ -17,26 +16,8 @@ use serenity::model::interactions::{
     application_command::ApplicationCommand, Interaction, InteractionResponseType,
 };
 use serenity::prelude::*;
-use std::env;
-use std::str::FromStr;
 
-fn load_config() -> AppConfig {
-    dotenv().ok();
-    let discord_token = env::var("DISCORD_TOKEN").unwrap();
-    let guild_id = env::var("GUILD_ID")
-        .expect("Expected GUILD_ID in .env")
-        .parse()
-        .expect("GUILD_ID must be an integer");
-    let lobby_channel_id = env::var("LOBBY_CHANNEL_ID")
-        .expect("Expected LOBBY_CHANNEL_ID in .env")
-        .parse()
-        .expect("LOBBY_CHANNEL_ID must be an integer");
-    AppConfig {
-        discord_token,
-        guild_id,
-        lobby_channel_id,
-    }
-}
+use std::str::FromStr;
 
 lazy_static! {
     static ref CONFIG: AppConfig = load_config();
