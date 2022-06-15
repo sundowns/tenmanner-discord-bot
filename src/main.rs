@@ -29,7 +29,7 @@ struct Handler;
 impl EventHandler for Handler {
     async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
         if let Interaction::ApplicationCommand(command) = interaction {
-            println!("Received command interaction: {:#?}", command);
+            // println!("Received command interaction: {:#?}", command);
 
             let raw_command_name = command.data.name.as_str();
             let immediate_response_content: String = match SlashCommands::from_str(raw_command_name)
@@ -60,7 +60,7 @@ impl EventHandler for Handler {
 
         let guild_id = GuildId(CONFIG.guild_id);
 
-        let commands = GuildId::set_application_commands(&guild_id, &ctx.http, |commands| {
+        let _commands = GuildId::set_application_commands(&guild_id, &ctx.http, |commands| {
             commands.create_application_command(|command| {
                 command
                     .name("lobby")
@@ -69,23 +69,13 @@ impl EventHandler for Handler {
         })
         .await;
 
-        println!(
-            "I now have the following guild slash commands: {:#?}",
-            commands
-        );
-
-        let global_command =
+        let _global_command =
             ApplicationCommand::create_global_application_command(&ctx.http, |command| {
                 command
                     .name("lobby")
                     .description("Create a new scrim lobby signup sheet")
             })
             .await;
-
-        println!(
-            "I created the following global slash command: {:#?}",
-            global_command
-        );
     }
 }
 

@@ -1,9 +1,20 @@
 use crate::config::AppConfig;
-use serenity::model::id::ChannelId;
+use serenity::model::id::{ChannelId, EmojiId};
 use serenity::model::interactions::application_command::ApplicationCommandInteraction;
+use serenity::model::misc::EmojiIdentifier;
 use serenity::prelude::*;
 
+use std::collections::HashMap;
 use std::str::FromStr;
+
+lazy_static! {
+    static ref EMOJIS: HashMap<&'static str, u64> = {
+        let mut m = HashMap::new();
+        m.insert("MOE", 936941675811582032);
+        m
+    };
+}
+
 pub struct CommandRunner {}
 
 impl CommandRunner {
@@ -12,16 +23,48 @@ impl CommandRunner {
         _command: &ApplicationCommandInteraction,
         config: &AppConfig,
     ) -> String {
-        if let Err(result) = ChannelId(config.lobby_channel_id)
-            .say(&ctx.http, "blah")
-            .await
-        {
-            println!(
+        let channel = ChannelId(config.lobby_channel_id);
+
+        let result = channel
+            .send_message(&ctx.http, |m| {
+                m.embed(|e| {
+                    e.title("10 Man EOI")
+                        .description("skrrt")
+                        .thumbnail("attachment://jonadello.png")
+                })
+                .add_file("./media/jonadello.png")
+            })
+            .await;
+
+        match result {
+            Ok(message) => {
+                println!("ID: {}", message.id);
+                let reaction_result = message
+                    .react(
+                        &ctx.http,
+                        EmojiIdentifier {
+                            animated: false,
+                            id: EmojiId(*EMOJIS.get("MOE").unwrap()),
+                            name: "MOE".to_string(),
+                        },
+                    )
+                    .await;
+                match reaction_result {
+                    Ok(_success) => {
+                        println!("reaction success");
+                    }
+                    Err(error) => {
+                        println!("Error when reacting: {}", error);
+                    }
+                }
+            }
+            Err(error) => println!(
                 "Failed to find channel to post new lobby to. Looking for channel with id {}",
-                result
-            );
-        };
-        return "Ok".to_string();
+                error
+            ),
+        }
+
+        return "Created!".to_string();
     }
 }
 
