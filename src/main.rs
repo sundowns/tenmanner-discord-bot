@@ -50,13 +50,14 @@ impl EventHandler for Handler {
         if let Interaction::ApplicationCommand(command) = interaction {
             println!("Received command interaction: {:#?}", command);
 
-            let immediate_response_content: String =
-                match SlashCommands::from_str(command.data.name.as_str()).unwrap() {
-                    SlashCommands::Lobby => {
-                        CommandRunner::handle_lobby_command(&ctx, &command, &CONFIG).await
-                    }
-                    _ => "Unknown command".to_string(),
-                };
+            let raw_command_name = command.data.name.as_str();
+            let immediate_response_content: String = match SlashCommands::from_str(raw_command_name)
+            {
+                Ok(SlashCommands::Lobby) => {
+                    CommandRunner::handle_lobby_command(&ctx, &command, &CONFIG).await
+                }
+                Err(_) => format!("Unknown command: {}", raw_command_name).to_string(),
+            };
 
             if let Err(why) = command
                 .create_interaction_response(&ctx.http, |response| {
