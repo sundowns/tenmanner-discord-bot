@@ -1,12 +1,15 @@
 use crate::config::AppConfig;
 use crate::util::{react_to_message, respond_to_slash_command};
-use serenity::model::id::ChannelId;
-use serenity::model::interactions::application_command::ApplicationCommandInteraction;
+use serenity::model::id::{ChannelId, MessageId};
+use serenity::model::interactions::application_command::{
+    ApplicationCommandInteraction, ApplicationCommandOptionType,
+};
 use serenity::prelude::*;
 use std::str::FromStr;
 
 pub enum SlashCommands {
     Lobby,
+    Delete,
 }
 
 impl FromStr for SlashCommands {
@@ -15,6 +18,7 @@ impl FromStr for SlashCommands {
     fn from_str(input: &str) -> Result<SlashCommands, Self::Err> {
         match input {
             "lobby" => Ok(SlashCommands::Lobby),
+            "delete" => Ok(SlashCommands::Delete),
             _ => Err(()),
         }
     }
@@ -93,6 +97,42 @@ impl CommandRunner {
                 "Failed to find channel to post new lobby to. Looking for channel with id {}",
                 error
             ),
+        }
+    }
+
+    pub async fn handle_delete_command(
+        ctx: &Context,
+        command: &ApplicationCommandInteraction,
+        config: &AppConfig,
+    ) {
+        let channel = ChannelId(config.lobby_channel_id);
+
+        let option = command.data.options.get(0).expect("Expected message ID");
+        if let ApplicationCommandOptionType::String = option.kind {
+            match &option.value {
+                Some(message_id) => {
+                    println!("str version {}", message_id);
+                    let id = MessageId(message_id.as_u64().unwrap());
+                    println!("thingo {}", id);
+                    match channel.delete_message(&ctx.http, id).await {
+                        Ok(_) => {
+                            respond_to_slash_command(ctx, command, "Message deleted").await;
+                        }
+                        Err(_) => {
+                            respond_to_slash_command(
+                                ctx,
+                                command,
+                                format!("Failed to delete message with ID: {}", message_id),
+                            )
+                            .await
+                        }
+                    }
+                }
+                _ => {
+                    respond_to_slash_command(ctx, command, "Failed to parse id parameter").await;
+                    panic!("Failed to parse id parameter")
+                }
+            }
         }
     }
 }

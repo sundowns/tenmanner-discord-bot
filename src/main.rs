@@ -12,8 +12,10 @@ use crate::commands::{CommandRunner, SlashCommands};
 use crate::config::{load_config, AppConfig};
 use serenity::async_trait;
 use serenity::model::gateway::Ready;
-use serenity::model::id::GuildId;
-use serenity::model::interactions::{application_command::ApplicationCommand, Interaction};
+use serenity::model::interactions::{
+    application_command::{ApplicationCommand, ApplicationCommandOptionType},
+    Interaction,
+};
 use serenity::prelude::*;
 
 use std::str::FromStr;
@@ -33,6 +35,9 @@ impl EventHandler for Handler {
                 Ok(SlashCommands::Lobby) => {
                     CommandRunner::handle_lobby_command(&ctx, &command, &CONFIG).await
                 }
+                Ok(SlashCommands::Delete) => {
+                    CommandRunner::handle_delete_command(&ctx, &command, &CONFIG).await
+                }
                 Err(_) => println!("Unknown command: {}", raw_command_name),
             };
         }
@@ -41,22 +46,24 @@ impl EventHandler for Handler {
     async fn ready(&self, ctx: Context, ready: Ready) {
         println!("{} is connected!", ready.user.name);
 
-        let guild_id = GuildId(CONFIG.guild_id);
-
-        let _commands = GuildId::set_application_commands(&guild_id, &ctx.http, |commands| {
-            commands.create_application_command(|command| {
-                command
-                    .name("lobby")
-                    .description("Create a new scrim lobby signup sheet")
-            })
-        })
-        .await;
-
         let _global_command =
-            ApplicationCommand::create_global_application_command(&ctx.http, |command| {
-                command
-                    .name("lobby")
-                    .description("Create a new scrim lobby signup sheet")
+            ApplicationCommand::set_global_application_commands(&ctx.http, |commands| {
+                commands
+                    .create_application_command(|f| {
+                        f.name("lobby")
+                            .description("Create a new scrim lobby signup sheet")
+                    })
+                    .create_application_command(|f| {
+                        f.name("delete")
+                            .description("Delete a signup sheet by ID")
+                            .create_option(|option| {
+                                option
+                                    .name("id")
+                                    .description("The ID of the message to delete")
+                                    .kind(ApplicationCommandOptionType::String)
+                                    .required(true)
+                            })
+                    })
             })
             .await;
     }
