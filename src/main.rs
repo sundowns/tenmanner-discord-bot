@@ -85,10 +85,15 @@ impl EventHandler for Handler {
 #[tokio::main]
 async fn main() {
     // Build our client.
-    let mut client = Client::builder(&CONFIG.discord_token, GatewayIntents::empty())
-        .event_handler(Handler)
-        .await
-        .expect("Error creating client");
+    let mut client = Client::builder(
+        &CONFIG.discord_token,
+        GatewayIntents::DIRECT_MESSAGES
+            | GatewayIntents::GUILD_MESSAGES
+            | GatewayIntents::GUILD_MESSAGE_REACTIONS,
+    )
+    .event_handler(Handler)
+    .await
+    .expect("Error creating client");
 
     // Finally, start a single shard, and start listening to events.
     // Shards will automatically attempt to reconnect, and will perform
