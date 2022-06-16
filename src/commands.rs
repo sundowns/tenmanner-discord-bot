@@ -1,9 +1,7 @@
 use crate::config::AppConfig;
-use crate::util::react_to_message;
+use crate::util::{react_to_message, respond_to_slash_command};
 use serenity::model::id::ChannelId;
-use serenity::model::interactions::{
-    application_command::ApplicationCommandInteraction, InteractionResponseType,
-};
+use serenity::model::interactions::application_command::ApplicationCommandInteraction;
 use serenity::prelude::*;
 use std::str::FromStr;
 
@@ -32,18 +30,7 @@ impl CommandRunner {
     ) {
         let channel = ChannelId(config.lobby_channel_id);
 
-        if let Err(why) = command
-            .create_interaction_response(&ctx.http, |response| {
-                response
-                    .kind(InteractionResponseType::ChannelMessageWithSource)
-                    .interaction_response_data(|message| {
-                        message.content("Accepted.").ephemeral(true)
-                    })
-            })
-            .await
-        {
-            println!("Cannot respond to slash command: {}", why);
-        }
+        respond_to_slash_command(ctx, command, "Accepted.").await;
 
         // Create the embed
         let result = channel
@@ -56,6 +43,7 @@ impl CommandRunner {
         match result {
             Ok(mut message) => {
                 println!("Embed Message ID: {}", message.id);
+                let id = message.id.clone();
                 // Update footer with message ID
                 let _edit_result = message
                     .edit(&ctx.http, |m| {
@@ -64,7 +52,7 @@ impl CommandRunner {
                                 .description("skrrt")
                                 .thumbnail("attachment://jonadello.png")
                                 .color(0xff7700)
-                                .footer(|f| f.text("blah"))
+                                .footer(|f| f.text(id))
                         })
                     })
                     .await;
