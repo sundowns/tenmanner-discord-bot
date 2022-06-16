@@ -95,4 +95,11 @@ impl CommandRunner {
 
         return "Created!".to_string();
     }
+
+    pub async fn handle_lobby_post_response(
+        ctx: &Context,
+        _command: &ApplicationCommandInteraction,
+        config: &AppConfig,
+    ) {
+    }
 }

@@ -55,6 +55,14 @@ impl EventHandler for Handler {
             {
                 println!("Cannot respond to slash command: {}", why);
             }
+
+            // After response handler
+            let _post_response_content: String = match SlashCommands::from_str(raw_command_name) {
+                Ok(SlashCommands::Lobby) => {
+                    CommandRunner::handle_lobby_post_response(&ctx, &command, &CONFIG).await
+                }
+                Err(_) => format!("Unknown command: {}", raw_command_name).to_string(),
+            };
         }
     }
 
