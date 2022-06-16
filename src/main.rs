@@ -13,9 +13,7 @@ use crate::config::{load_config, AppConfig};
 use serenity::async_trait;
 use serenity::model::gateway::Ready;
 use serenity::model::id::GuildId;
-use serenity::model::interactions::{
-    application_command::ApplicationCommand, Interaction, InteractionResponseType,
-};
+use serenity::model::interactions::{application_command::ApplicationCommand, Interaction};
 use serenity::prelude::*;
 
 use std::str::FromStr;
@@ -30,38 +28,12 @@ struct Handler;
 impl EventHandler for Handler {
     async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
         if let Interaction::ApplicationCommand(command) = interaction {
-            // println!("Received command interaction: {:#?}", command);
-
             let raw_command_name = command.data.name.as_str();
-            let immediate_response_content: String = match SlashCommands::from_str(raw_command_name)
-            {
+            match SlashCommands::from_str(raw_command_name) {
                 Ok(SlashCommands::Lobby) => {
                     CommandRunner::handle_lobby_command(&ctx, &command, &CONFIG).await
                 }
-                Err(_) => format!("Unknown command: {}", raw_command_name).to_string(),
-            };
-
-            println!("{}", immediate_response_content);
-
-            if let Err(why) = command
-                .create_interaction_response(&ctx.http, |response| {
-                    response
-                        .kind(InteractionResponseType::ChannelMessageWithSource)
-                        .interaction_response_data(|message| {
-                            message.content(immediate_response_content).ephemeral(true)
-                        })
-                })
-                .await
-            {
-                println!("Cannot respond to slash command: {}", why);
-            }
-
-            // After response handler
-            let _post_response_content: String = match SlashCommands::from_str(raw_command_name) {
-                Ok(SlashCommands::Lobby) => {
-                    CommandRunner::handle_lobby_post_response(&ctx, &command, &CONFIG).await
-                }
-                Err(_) => format!("Unknown command: {}", raw_command_name).to_string(),
+                Err(_) => println!("Unknown command: {}", raw_command_name),
             };
         }
     }

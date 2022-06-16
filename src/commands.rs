@@ -1,9 +1,10 @@
 use crate::config::AppConfig;
 use crate::util::react_to_message;
 use serenity::model::id::ChannelId;
-use serenity::model::interactions::application_command::ApplicationCommandInteraction;
+use serenity::model::interactions::{
+    application_command::ApplicationCommandInteraction, InteractionResponseType,
+};
 use serenity::prelude::*;
-
 use std::str::FromStr;
 
 pub enum SlashCommands {
@@ -26,10 +27,23 @@ pub struct CommandRunner {}
 impl CommandRunner {
     pub async fn handle_lobby_command(
         ctx: &Context,
-        _command: &ApplicationCommandInteraction,
+        command: &ApplicationCommandInteraction,
         config: &AppConfig,
-    ) -> String {
+    ) {
         let channel = ChannelId(config.lobby_channel_id);
+
+        if let Err(why) = command
+            .create_interaction_response(&ctx.http, |response| {
+                response
+                    .kind(InteractionResponseType::ChannelMessageWithSource)
+                    .interaction_response_data(|message| {
+                        message.content("Accepted.").ephemeral(true)
+                    })
+            })
+            .await
+        {
+            println!("Cannot respond to slash command: {}", why);
+        }
 
         // Create the embed
         let result = channel
@@ -92,14 +106,5 @@ impl CommandRunner {
                 error
             ),
         }
-
-        return "Created!".to_string();
-    }
-
-    pub async fn handle_lobby_post_response(
-        ctx: &Context,
-        _command: &ApplicationCommandInteraction,
-        config: &AppConfig,
-    ) {
     }
 }
