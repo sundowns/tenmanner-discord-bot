@@ -111,22 +111,32 @@ impl CommandRunner {
         if let ApplicationCommandOptionType::String = option.kind {
             match &option.value {
                 Some(message_id) => {
-                    println!("str version {}", message_id);
-                    let id = MessageId(message_id.as_u64().unwrap());
-                    println!("thingo {}", id);
-                    match channel.delete_message(&ctx.http, id).await {
-                        Ok(_) => {
-                            respond_to_slash_command(ctx, command, "Message deleted").await;
+                    let string_val = message_id.as_str().unwrap();
+
+                    if let Ok(integer_id) = string_val.parse::<u64>() {
+                        let id = MessageId(integer_id);
+                        match channel.delete_message(&ctx.http, id).await {
+                            Ok(_) => {
+                                respond_to_slash_command(ctx, command, "Signup post deleted.")
+                                    .await;
+                            }
+                            Err(_) => {
+                                respond_to_slash_command(
+                                    ctx,
+                                    command,
+                                    format!("Failed to delete message with ID: {}", message_id),
+                                )
+                                .await
+                            }
                         }
-                        Err(_) => {
-                            respond_to_slash_command(
-                                ctx,
-                                command,
-                                format!("Failed to delete message with ID: {}", message_id),
-                            )
-                            .await
-                        }
-                    }
+                    } else {
+                        respond_to_slash_command(
+                            ctx,
+                            command,
+                            "Invalid message ID - copy the value from a signup post's footer",
+                        )
+                        .await;
+                    };
                 }
                 _ => {
                     respond_to_slash_command(ctx, command, "Failed to parse id parameter").await;
