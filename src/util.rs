@@ -36,3 +36,25 @@ pub async fn respond_to_slash_command<D: ToString>(
         println!("Cannot respond to slash command: {}", why);
     }
 }
+
+pub async fn check_for_senders_role(
+    ctx: &Context,
+    command: &ApplicationCommandInteraction,
+    guild_id: u64,
+    role_id: u64,
+) -> bool {
+    return match command
+        .user
+        .has_role(&ctx.http, GuildId(guild_id), RoleId(role_id))
+        .await
+    {
+        Ok(has_role) => has_role,
+        Err(_) => {
+            println!(
+                "Failed to lookup user's role with guild ID [{}] and role ID [{}]",
+                guild_id, role_id
+            );
+            false
+        }
+    };
+}

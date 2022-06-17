@@ -46,7 +46,6 @@ impl CommandRunner {
 
         match result {
             Ok(mut message) => {
-                println!("Embed Message ID: {}", message.id);
                 let id = message.id.clone();
                 // Update footer with message ID
                 let _edit_result = message

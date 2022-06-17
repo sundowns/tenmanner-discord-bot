@@ -17,6 +17,7 @@ use serenity::model::interactions::{
     Interaction,
 };
 use serenity::prelude::*;
+use util::{check_for_senders_role, respond_to_slash_command};
 
 use std::str::FromStr;
 
@@ -30,7 +31,19 @@ struct Handler;
 impl EventHandler for Handler {
     async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
         if let Interaction::ApplicationCommand(command) = interaction {
+            if !(check_for_senders_role(&ctx, &command, CONFIG.guild_id, CONFIG.organiser_role_id)
+                .await)
+            {
+                respond_to_slash_command(
+                    &ctx,
+                    &command,
+                    "You're not powerful enough...weakling...........",
+                )
+                .await;
+                return;
+            }
             let raw_command_name = command.data.name.as_str();
+
             match SlashCommands::from_str(raw_command_name) {
                 Ok(SlashCommands::Lobby) => {
                     CommandRunner::handle_lobby_command(&ctx, &command, &CONFIG).await
