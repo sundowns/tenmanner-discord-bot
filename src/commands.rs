@@ -1,10 +1,13 @@
 use crate::config::AppConfig;
-use crate::util::{react_to_message, respond_to_slash_command};
+use crate::util::respond_to_slash_command;
+use serenity::builder::{CreateActionRow, CreateButton};
 use serenity::model::id::{ChannelId, MessageId};
 use serenity::model::interactions::application_command::{
     ApplicationCommandInteraction, ApplicationCommandOptionType,
 };
+use serenity::model::interactions::message_component::ButtonStyle;
 use serenity::prelude::*;
+use std::fmt;
 use std::str::FromStr;
 
 pub enum SlashCommands {
@@ -21,6 +24,54 @@ impl FromStr for SlashCommands {
             "delete" => Ok(SlashCommands::Delete),
             _ => Err(()),
         }
+    }
+}
+
+enum GamerResponseOption {
+    Yes,
+    No,
+    Maybe,
+    Late,
+}
+
+impl fmt::Display for GamerResponseOption {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Yes => write!(f, "Yes"),
+            Self::No => write!(f, "No"),
+            Self::Maybe => write!(f, "Maybe"),
+            Self::Late => write!(f, "Late"),
+        }
+    }
+}
+
+impl GamerResponseOption {
+    fn emoji(&self) -> char {
+        match self {
+            Self::Yes => '✅',
+            Self::No => '❌',
+            Self::Maybe => '❔',
+            Self::Late => '⌛',
+        }
+    }
+
+    fn button(&self) -> CreateButton {
+        let mut b = CreateButton::default();
+        b.custom_id(self.to_string().to_ascii_lowercase());
+        b.emoji(self.emoji());
+        b.label(self);
+        b.style(ButtonStyle::Primary);
+        b
+    }
+
+    fn action_row() -> CreateActionRow {
+        let mut ar = CreateActionRow::default();
+        // We can add up to 5 buttons per action row
+        ar.add_button(GamerResponseOption::Yes.button());
+        ar.add_button(GamerResponseOption::No.button());
+        ar.add_button(GamerResponseOption::Maybe.button());
+        ar.add_button(GamerResponseOption::Late.button());
+        ar
     }
 }
 
@@ -57,40 +108,9 @@ impl CommandRunner {
                                 .color(0xff7700)
                                 .footer(|f| f.text(id))
                         })
+                        .components(|f| f.add_action_row(GamerResponseOption::action_row()))
                     })
                     .await;
-
-                //Add reaction options
-                react_to_message(
-                    ctx,
-                    &message,
-                    std::env::var("EMOJI_YES_ID")
-                        .expect("Expected EMOJI_YES_ID in .env")
-                        .parse()
-                        .expect("EMOJI_YES_ID must be an integer"),
-                    std::env::var("EMOJI_YES_NAME").expect("Expected EMOJI_YES_NAME in .env"),
-                )
-                .await;
-                react_to_message(
-                    ctx,
-                    &message,
-                    std::env::var("EMOJI_NO_ID")
-                        .expect("Expected EMOJI_NO_ID in .env")
-                        .parse()
-                        .expect("EMOJI_NO_ID must be an integer"),
-                    std::env::var("EMOJI_NO_NAME").expect("Expected EMOJI_NO_NAME in .env"),
-                )
-                .await;
-                react_to_message(
-                    ctx,
-                    &message,
-                    std::env::var("EMOJI_MAYBE_ID")
-                        .expect("Expected EMOJI_MAYBE_ID in .env")
-                        .parse()
-                        .expect("EMOJI_MAYBE_ID must be an integer"),
-                    std::env::var("EMOJI_MAYBE_NAME").expect("Expected EMOJI_MAYBE_NAME in .env"),
-                )
-                .await;
             }
             Err(error) => println!(
                 "Failed to find channel to post new lobby to. Looking for channel with id {}",
