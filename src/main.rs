@@ -64,6 +64,13 @@ impl EventHandler for Handler {
                     .create_application_command(|f| {
                         f.name("lobby")
                             .description("Create a new scrim lobby signup sheet")
+                            .create_option(|option| {
+                                option
+                                    .name("when")
+                                    .description("The time for gaming")
+                                    .kind(ApplicationCommandOptionType::String)
+                                    .required(true)
+                            })
                     })
                     .create_application_command(|f| {
                         f.name("delete")

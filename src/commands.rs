@@ -85,6 +85,11 @@ impl CommandRunner {
     ) {
         let channel = ChannelId(config.lobby_channel_id);
 
+        let option = command.data.options.get(0).expect("Expected time option.");
+        let time_string = match &option.value {
+            Some(value) => value.as_str().unwrap(),
+            _ => "",
+        };
         respond_to_slash_command(ctx, command, "Accepted.").await;
 
         // Create the embed
@@ -103,7 +108,7 @@ impl CommandRunner {
                     .edit(&ctx.http, |m| {
                         m.embed(|e| {
                             e.title("10 Man EOI")
-                                .description("skrrt")
+                                .description(format!("**{}**", time_string))
                                 .thumbnail("attachment://jonadello.png")
                                 .color(0xff7700)
                                 .footer(|f| f.text(id))
