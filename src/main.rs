@@ -31,6 +31,7 @@ struct Handler;
 impl EventHandler for Handler {
     async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
         if let Interaction::ApplicationCommand(command) = interaction {
+            // Handle Slash Commands
             if !(check_for_senders_role(&ctx, &command, CONFIG.guild_id, CONFIG.organiser_role_id)
                 .await)
             {
@@ -53,6 +54,11 @@ impl EventHandler for Handler {
                 }
                 Err(_) => println!("Unknown command: {}", raw_command_name),
             };
+        } else if let Interaction::MessageComponent(reaction) = interaction {
+            // Handle component reactions (embed button presses etc)
+            if reaction.channel_id == CONFIG.lobby_channel_id {
+                CommandRunner::handle_signup_response(&ctx, &reaction, &CONFIG).await;
+            }
         }
     }
     async fn ready(&self, ctx: Context, ready: Ready) {

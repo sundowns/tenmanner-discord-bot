@@ -1,3 +1,4 @@
+use serenity::model::interactions::message_component::MessageComponentInteraction;
 use serenity::model::interactions::{
     application_command::ApplicationCommandInteraction, InteractionResponseType,
 };
@@ -34,6 +35,25 @@ pub async fn respond_to_slash_command<D: ToString>(
         .await
     {
         println!("Cannot respond to slash command: {}", why);
+    }
+}
+
+pub async fn respond_to_signup_interaction<D: ToString>(
+    ctx: &Context,
+    reaction: &MessageComponentInteraction,
+    message_content: D,
+) {
+    if let Err(why) = reaction
+        .create_interaction_response(&ctx.http, |response| {
+            response
+                .kind(InteractionResponseType::ChannelMessageWithSource)
+                .interaction_response_data(|message| {
+                    message.content(message_content).ephemeral(true)
+                })
+        })
+        .await
+    {
+        println!("Cannot respond to signup response: {}", why);
     }
 }
 

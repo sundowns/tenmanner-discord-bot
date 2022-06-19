@@ -1,11 +1,11 @@
 use crate::config::AppConfig;
-use crate::util::respond_to_slash_command;
+use crate::util::{respond_to_signup_interaction, respond_to_slash_command};
 use serenity::builder::{CreateActionRow, CreateButton};
 use serenity::model::id::{ChannelId, MessageId};
 use serenity::model::interactions::application_command::{
     ApplicationCommandInteraction, ApplicationCommandOptionType,
 };
-use serenity::model::interactions::message_component::ButtonStyle;
+use serenity::model::interactions::message_component::{ButtonStyle, MessageComponentInteraction};
 use serenity::prelude::*;
 use std::fmt;
 use std::str::FromStr;
@@ -75,6 +75,20 @@ impl GamerResponseOption {
     }
 }
 
+impl FromStr for GamerResponseOption {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "yes" => Ok(GamerResponseOption::Yes),
+            "no" => Ok(GamerResponseOption::No),
+            "maybe" => Ok(GamerResponseOption::Maybe),
+            "late" => Ok(GamerResponseOption::Late),
+            _ => Err(()),
+        }
+    }
+}
+
 pub struct CommandRunner {}
 
 impl CommandRunner {
@@ -103,7 +117,7 @@ impl CommandRunner {
         match result {
             Ok(mut message) => {
                 let id = message.id.clone();
-                // Update footer with message ID
+                // Update footer with message IDawait_component_interactions
                 let _edit_result = message
                     .edit(&ctx.http, |m| {
                         m.embed(|e| {
@@ -167,6 +181,23 @@ impl CommandRunner {
                     panic!("Failed to parse id parameter")
                 }
             }
+        }
+    }
+    pub async fn handle_signup_response(
+        ctx: &Context,
+        reaction: &MessageComponentInteraction,
+        _config: &AppConfig,
+    ) {
+        if let Ok(response) = GamerResponseOption::from_str(&reaction.data.custom_id) {
+            println!("Response received: {}", response);
+            respond_to_signup_interaction(
+                ctx,
+                reaction,
+                format!("{} **{}** response received.", response.emoji(), response),
+            )
+            .await;
+        } else {
+            respond_to_signup_interaction(ctx, reaction, "Failed :c").await;
         }
     }
 }
