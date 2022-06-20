@@ -1,3 +1,5 @@
+use std::vec;
+
 use serenity::model::interactions::message_component::MessageComponentInteraction;
 use serenity::model::interactions::{
     application_command::ApplicationCommandInteraction, InteractionResponseType,
@@ -5,6 +7,8 @@ use serenity::model::interactions::{
 use serenity::model::misc::EmojiIdentifier;
 use serenity::model::prelude::*;
 use serenity::prelude::*;
+
+use crate::reactions::GamerResponseOption;
 
 pub async fn react_to_message(ctx: &Context, message: &Message, emoji_id: u64, emoji_name: String) {
     let _result = message
@@ -77,4 +81,13 @@ pub async fn check_for_senders_role(
             false
         }
     };
+}
+
+pub async fn remove_from_response_lists(
+    data: Vec<(String, String, bool)>,
+    except_for: GamerResponseOption,
+    mention: Mention,
+) -> Vec<(String, String, bool)> {
+    // Loop over the data, for each collectio
+    vec![("stub".to_string(), "stub".to_string(), false)]
 }
