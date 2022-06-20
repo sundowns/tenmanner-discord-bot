@@ -57,7 +57,7 @@ impl EventHandler for Handler {
         } else if let Interaction::MessageComponent(reaction) = interaction {
             // Handle component reactions (embed button presses etc)
             if reaction.channel_id == CONFIG.lobby_channel_id {
-                CommandRunner::handle_signup_response(&ctx, &reaction, &CONFIG).await;
+                CommandRunner::handle_signup_response(&ctx, reaction, &CONFIG).await;
             }
         }
     }

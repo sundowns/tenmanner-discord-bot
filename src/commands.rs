@@ -1,14 +1,17 @@
 use crate::config::AppConfig;
 use crate::util::{respond_to_signup_interaction, respond_to_slash_command};
-use serenity::builder::{CreateActionRow, CreateButton};
+use serenity::builder::{CreateActionRow, CreateButton, CreateEmbed};
 use serenity::model::id::{ChannelId, MessageId};
 use serenity::model::interactions::application_command::{
     ApplicationCommandInteraction, ApplicationCommandOptionType,
 };
 use serenity::model::interactions::message_component::{ButtonStyle, MessageComponentInteraction};
+use serenity::model::mention::Mention;
 use serenity::prelude::*;
-use std::fmt;
 use std::str::FromStr;
+use std::{fmt, vec};
+
+const DEFAULT_LIST_STRING: &str = "...";
 
 pub enum SlashCommands {
     Lobby,
@@ -52,6 +55,15 @@ impl GamerResponseOption {
             Self::No => '❌',
             Self::Maybe => '❔',
             Self::Late => '⌛',
+        }
+    }
+
+    fn heading(&self) -> &str {
+        match self {
+            Self::Yes => "Gamers",
+            Self::No => "Dogs",
+            Self::Maybe => "Potential Gamers",
+            Self::Late => "Late Gamers",
         }
     }
 
@@ -118,7 +130,7 @@ impl CommandRunner {
             Ok(mut message) => {
                 let id = message.id.clone();
                 // Update footer with message IDawait_component_interactions
-                let _edit_result = message
+                let edit_result = message
                     .edit(&ctx.http, |m| {
                         m.embed(|e| {
                             e.title("10 Man EOI")
@@ -126,10 +138,21 @@ impl CommandRunner {
                                 .thumbnail("attachment://jonadello.png")
                                 .color(0xff7700)
                                 .footer(|f| f.text(id))
+                                .fields(vec![(
+                                    GamerResponseOption::Yes.heading(),
+                                    DEFAULT_LIST_STRING,
+                                    false,
+                                )])
                         })
                         .components(|f| f.add_action_row(GamerResponseOption::action_row()))
                     })
                     .await;
+                match edit_result {
+                    Ok(_res) => {
+                        println!("New lobby post created");
+                    }
+                    Err(err) => println!("Failed to edit lobby post upon creation: {}", err),
+                }
             }
             Err(error) => println!(
                 "Failed to find channel to post new lobby to. Looking for channel with id {}",
@@ -183,21 +206,66 @@ impl CommandRunner {
             }
         }
     }
+
     pub async fn handle_signup_response(
         ctx: &Context,
-        reaction: &MessageComponentInteraction,
+        reaction: MessageComponentInteraction,
         _config: &AppConfig,
     ) {
         if let Ok(response) = GamerResponseOption::from_str(&reaction.data.custom_id) {
-            println!("Response received: {}", response);
+            println!(
+                "Response received: {} from user: {}",
+                response, reaction.user.name
+            );
+
             respond_to_signup_interaction(
                 ctx,
-                reaction,
+                &reaction,
                 format!("{} **{}** response received.", response.emoji(), response),
             )
             .await;
+
+            match response {
+                GamerResponseOption::Yes => {
+                    let mut existing_embed = reaction.message.embeds[0].clone();
+                    let existing_fields = existing_embed.fields.clone();
+                    existing_embed.fields = vec![];
+                    let mut message = reaction.message;
+
+                    // User doesn't exist in this list
+                    if !existing_fields[0]
+                        .value
+                        .contains(&reaction.user.id.to_string())
+                    {
+                        let _update_result = message
+                            .edit(&ctx.http, |f| {
+                                f.embed(|e| {
+                                    *e = CreateEmbed::from(existing_embed);
+                                    e.fields(vec![(
+                                        GamerResponseOption::Yes.heading(),
+                                        if existing_fields[0].value == DEFAULT_LIST_STRING {
+                                            Mention::User(reaction.user.id).to_string()
+                                        } else {
+                                            format!(
+                                                "{} {}",
+                                                existing_fields[0].value,
+                                                Mention::User(reaction.user.id)
+                                            )
+                                        },
+                                        false,
+                                    )])
+                                    .thumbnail("attachment://jonadello.png")
+                                })
+                            })
+                            .await;
+                    }
+                }
+                GamerResponseOption::No => {}
+                GamerResponseOption::Maybe => {}
+                GamerResponseOption::Late => {}
+            }
         } else {
-            respond_to_signup_interaction(ctx, reaction, "Failed :c").await;
+            respond_to_signup_interaction(ctx, &reaction, "Failed :c").await;
         }
     }
 }
