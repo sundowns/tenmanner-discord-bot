@@ -1,8 +1,6 @@
-use crate::util::strip_mention_from_response_lists;
-use crate::DEFAULT_LIST_STRING;
+use crate::util::{add_mention_to_response_list, strip_mention_from_response_lists};
 use serenity::builder::{CreateActionRow, CreateButton, CreateEmbed};
 use serenity::model::interactions::message_component::{ButtonStyle, MessageComponentInteraction};
-use serenity::model::mention::Mention;
 use serenity::prelude::*;
 use std::str::FromStr;
 use std::{fmt, vec};
@@ -78,6 +76,7 @@ impl FromStr for GamerResponseOption {
     }
 }
 
+// TODO: refactor into a single handle_x_reaction function
 pub async fn handle_yes_reaction(ctx: &Context, reaction: MessageComponentInteraction) {
     let mut existing_embed = reaction.message.embeds[0].clone();
     let existing_fields = existing_embed.fields.clone();
@@ -89,28 +88,20 @@ pub async fn handle_yes_reaction(ctx: &Context, reaction: MessageComponentIntera
         .value
         .contains(&reaction.user.id.to_string())
     {
-        let user_mention = Mention::User(reaction.user.id);
-        let new_data = strip_mention_from_response_lists(
-            existing_fields.clone(),
-            GamerResponseOption::Yes,
-            user_mention,
-        );
+        // let user_mention = Mention::User(reaction.user.id);
+        let stripped_data =
+            strip_mention_from_response_lists(existing_fields.clone(), reaction.user.id).await;
+        let data_with_new_user =
+            add_mention_to_response_list(stripped_data, GamerResponseOption::Yes, reaction.user.id)
+                .await;
 
-        // TODO: replace the new_data with the updated one
+        // replace the new_data with the updated one
         let _update_result = message
             .edit(&ctx.http, |f| {
                 f.embed(|e| {
                     *e = CreateEmbed::from(existing_embed);
-                    e.fields(vec![(
-                        GamerResponseOption::Yes.heading(),
-                        if existing_fields[0].value == DEFAULT_LIST_STRING {
-                            user_mention.to_string()
-                        } else {
-                            format!("{} {}", existing_fields[0].value, user_mention)
-                        },
-                        false,
-                    )])
-                    .thumbnail("attachment://jonadello.png")
+                    e.fields(data_with_new_user)
+                        .thumbnail("attachment://jonadello.png")
                 })
             })
             .await;
@@ -124,28 +115,24 @@ pub async fn handle_no_reaction(ctx: &Context, reaction: MessageComponentInterac
     let mut message = reaction.message;
 
     // User doesn't exist in this list
-    if !existing_fields[0]
+    if !existing_fields[1]
         .value
         .contains(&reaction.user.id.to_string())
     {
+        // let user_mention = Mention::User(reaction.user.id);
+        let stripped_data =
+            strip_mention_from_response_lists(existing_fields.clone(), reaction.user.id).await;
+        let data_with_new_user =
+            add_mention_to_response_list(stripped_data, GamerResponseOption::No, reaction.user.id)
+                .await;
+
+        // replace the new_data with the updated one
         let _update_result = message
             .edit(&ctx.http, |f| {
                 f.embed(|e| {
                     *e = CreateEmbed::from(existing_embed);
-                    e.fields(vec![(
-                        GamerResponseOption::No.heading(),
-                        if existing_fields[1].value == DEFAULT_LIST_STRING {
-                            Mention::User(reaction.user.id).to_string()
-                        } else {
-                            format!(
-                                "{} {}",
-                                existing_fields[1].value,
-                                Mention::User(reaction.user.id)
-                            )
-                        },
-                        false,
-                    )])
-                    .thumbnail("attachment://jonadello.png")
+                    e.fields(data_with_new_user)
+                        .thumbnail("attachment://jonadello.png")
                 })
             })
             .await;

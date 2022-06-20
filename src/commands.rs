@@ -65,7 +65,7 @@ impl CommandRunner {
                     .edit(&ctx.http, |m| {
                         m.embed(|e| {
                             e.title("10 Man EOI")
-                                .description(format!("**{}**", time_string))
+                                .description(format!("🕒 **{}**", time_string))
                                 .thumbnail("attachment://jonadello.png")
                                 .color(0xff7700)
                                 .footer(|f| f.text(id))
