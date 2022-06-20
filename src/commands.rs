@@ -58,12 +58,12 @@ impl GamerResponseOption {
         }
     }
 
-    fn heading(&self) -> &str {
+    fn heading(&self) -> String {
         match self {
-            Self::Yes => "Gamers",
-            Self::No => "Dogs",
-            Self::Maybe => "Potential Gamers",
-            Self::Late => "Late Gamers",
+            Self::Yes => format!("{} Gamers", self.emoji()),
+            Self::No => format!("{} Rats", self.emoji()),
+            Self::Maybe => format!("{} Potential Gamers", self.emoji()),
+            Self::Late => format!("{} Late Gamers", self.emoji()),
         }
     }
 
