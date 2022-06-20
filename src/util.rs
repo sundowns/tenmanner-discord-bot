@@ -83,11 +83,15 @@ pub async fn check_for_senders_role(
     };
 }
 
-pub async fn remove_from_response_lists(
-    data: Vec<(String, String, bool)>,
+pub async fn strip_mention_from_response_lists(
+    data: Vec<EmbedField>,
     except_for: GamerResponseOption,
     mention: Mention,
-) -> Vec<(String, String, bool)> {
+) -> Vec<EmbedField> {
     // Loop over the data, for each collectio
-    vec![("stub".to_string(), "stub".to_string(), false)]
+    vec![EmbedField::new(
+        "stub".to_string(),
+        "stub".to_string(),
+        false,
+    )]
 }

@@ -1,3 +1,4 @@
+use crate::util::strip_mention_from_response_lists;
 use crate::DEFAULT_LIST_STRING;
 use serenity::builder::{CreateActionRow, CreateButton, CreateEmbed};
 use serenity::model::interactions::message_component::{ButtonStyle, MessageComponentInteraction};
@@ -88,6 +89,14 @@ pub async fn handle_yes_reaction(ctx: &Context, reaction: MessageComponentIntera
         .value
         .contains(&reaction.user.id.to_string())
     {
+        let user_mention = Mention::User(reaction.user.id);
+        let new_data = strip_mention_from_response_lists(
+            existing_fields.clone(),
+            GamerResponseOption::Yes,
+            user_mention,
+        );
+
+        // TODO: replace the new_data with the updated one
         let _update_result = message
             .edit(&ctx.http, |f| {
                 f.embed(|e| {
@@ -95,13 +104,9 @@ pub async fn handle_yes_reaction(ctx: &Context, reaction: MessageComponentIntera
                     e.fields(vec![(
                         GamerResponseOption::Yes.heading(),
                         if existing_fields[0].value == DEFAULT_LIST_STRING {
-                            Mention::User(reaction.user.id).to_string()
+                            user_mention.to_string()
                         } else {
-                            format!(
-                                "{} {}",
-                                existing_fields[0].value,
-                                Mention::User(reaction.user.id)
-                            )
+                            format!("{} {}", existing_fields[0].value, user_mention)
                         },
                         false,
                     )])
@@ -129,12 +134,12 @@ pub async fn handle_no_reaction(ctx: &Context, reaction: MessageComponentInterac
                     *e = CreateEmbed::from(existing_embed);
                     e.fields(vec![(
                         GamerResponseOption::No.heading(),
-                        if existing_fields[0].value == DEFAULT_LIST_STRING {
+                        if existing_fields[1].value == DEFAULT_LIST_STRING {
                             Mention::User(reaction.user.id).to_string()
                         } else {
                             format!(
                                 "{} {}",
-                                existing_fields[0].value,
+                                existing_fields[1].value,
                                 Mention::User(reaction.user.id)
                             )
                         },
