@@ -6,6 +6,7 @@ extern crate lazy_static;
 
 pub mod commands;
 pub mod config;
+pub mod reactions;
 pub mod util;
 
 use crate::commands::{CommandRunner, SlashCommands};
@@ -24,6 +25,8 @@ use std::str::FromStr;
 lazy_static! {
     static ref CONFIG: AppConfig = load_config();
 }
+
+static DEFAULT_LIST_STRING: &str = "...";
 
 struct Handler;
 
