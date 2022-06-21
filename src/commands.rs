@@ -165,8 +165,11 @@ impl CommandRunner {
             )
             .await;
 
-            handle_lobby_reaction(ctx, reaction, response).await;
-            // summarise_reactions(ctx, reaction.message).await;
+            if let Ok(responses) = handle_lobby_reaction(ctx, reaction.clone(), response).await {
+                if let Ok(embed_status) = summarise_reactions(responses).await {
+                    println!("Lobby has status: {}", embed_status);
+                }
+            }
         } else {
             respond_to_signup_interaction(ctx, &reaction, "Failed :c").await;
         }

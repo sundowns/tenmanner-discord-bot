@@ -1,12 +1,36 @@
 use crate::util::{add_mention_to_response_list, strip_mention_from_response_lists};
+use crate::DEFAULT_LIST_STRING;
 use serenity::builder::{CreateActionRow, CreateButton, CreateEmbed};
-use serenity::model::channel::Message;
 use serenity::model::interactions::message_component::{ButtonStyle, MessageComponentInteraction};
 use serenity::prelude::*;
 use serenity::utils::Colour;
-use std::str::FromStr;
-use std::{fmt, vec};
+use std::{error::Error, fmt, str::FromStr, vec};
 
+#[derive(Debug)]
+pub enum ReactionsError {
+    EmbedUpdateFailed,
+    ParseHeadingError,
+    NoUpdateRequired,
+}
+
+impl ReactionsError {
+    pub fn message(&self) -> &str {
+        match self {
+            Self::EmbedUpdateFailed => "Failed to update embed message contents after reaction",
+            Self::NoUpdateRequired => "User already responded, no change in data",
+            Self::ParseHeadingError => "Failed to parse reaction group heading",
+        }
+    }
+}
+
+impl fmt::Display for ReactionsError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "ReactionsError: {}", self.message())
+    }
+}
+impl Error for ReactionsError {}
+
+#[derive(Clone, Copy)]
 pub enum GamerResponseOption {
     Yes,
     No,
@@ -26,6 +50,8 @@ impl fmt::Display for GamerResponseOption {
 }
 
 impl GamerResponseOption {
+    const VALUES: [Self; 4] = [Self::Yes, Self::No, Self::Maybe, Self::Late];
+
     pub fn emoji(&self) -> char {
         match self {
             Self::Yes => '✅',
@@ -90,6 +116,7 @@ impl FromStr for GamerResponseOption {
 
 static FULL_LOBBY_COUNT: usize = 10;
 
+#[derive(Debug)]
 struct LobbySignupSummary {
     yes: usize,
     maybe: usize,
@@ -108,7 +135,7 @@ impl Default for LobbySignupSummary {
     }
 }
 
-enum LobbyStatus {
+pub enum LobbyStatus {
     Empty,
     Some,
     FullWithMaybe,
@@ -141,11 +168,22 @@ impl From<LobbySignupSummary> for LobbyStatus {
     }
 }
 
+impl fmt::Display for LobbyStatus {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::FullYes => write!(f, "Full"),
+            Self::FullWithMaybe => write!(f, "Full including maybes"),
+            Self::Some => write!(f, "Some players"),
+            Self::Empty => write!(f, "Empty"),
+        }
+    }
+}
+
 pub async fn handle_lobby_reaction(
     ctx: &Context,
     reaction: MessageComponentInteraction,
     option: GamerResponseOption,
-) {
+) -> Result<Vec<(String, String, bool)>, ReactionsError> {
     let mut existing_embed = reaction.message.embeds[0].clone();
     let existing_fields = existing_embed.fields.clone();
     existing_embed.fields = vec![];
@@ -163,36 +201,66 @@ pub async fn handle_lobby_reaction(
             add_mention_to_response_list(stripped_data, option, reaction.user.id).await;
 
         // replace the new_data with the updated one
-        let _update_result = message
+        if let Ok(_update_result) = message
             .edit(&ctx.http, |f| {
                 f.embed(|e| {
                     *e = CreateEmbed::from(existing_embed);
-                    e.fields(data_with_new_user)
+                    e.fields(data_with_new_user.clone())
                         .thumbnail("attachment://jonadello.png")
                 })
             })
-            .await;
+            .await
+        {
+            return Ok(data_with_new_user);
+        } else {
+            return Err(ReactionsError::EmbedUpdateFailed);
+        }
     }
+    return Err(ReactionsError::NoUpdateRequired);
 }
 
 // Count reactions in each field.
 // Sum all reactions, compare to thresholds and update embed colour accordingly
-pub async fn summarise_reactions(ctx: &Context, message: &Message) {
-    let mut count: usize = 0;
+pub async fn summarise_reactions(
+    reactions: Vec<(String, String, bool)>,
+) -> Result<LobbyStatus, ReactionsError> {
     let mut summary = LobbySignupSummary::default();
 
-    if let Some(mut existing_embed) = message.embeds.first() {
-        for field in existing_embed.fields.clone().into_iter() {
-            let count_for_field = field.value.split(" ").count();
-            // match field.name {
-            //     GamerResponseOption::Yes.heading() => {}
-            //     _ => {}
-            // };
-            // count += count_for_field;
+    for field in reactions.into_iter() {
+        let count_for_field = if field.1 == DEFAULT_LIST_STRING {
+            0
+        } else {
+            field.1.split(" ").count()
+        };
+        if let Ok(option_type) = get_response_type_from_heading(field.0) {
+            match option_type {
+                GamerResponseOption::Yes => {
+                    summary.yes = count_for_field;
+                }
+                GamerResponseOption::No => {
+                    summary.no = count_for_field;
+                }
+                GamerResponseOption::Maybe => {
+                    summary.maybe = count_for_field;
+                }
+                GamerResponseOption::Late => {
+                    summary.late = count_for_field;
+                }
+            }
+        } else {
+            return Err(ReactionsError::ParseHeadingError);
         }
-
-        // let status: LobbyStatus = LobbyStatus::from(LobbySignupSummary)
     }
+    println!("{:?}", summary);
+    return Ok(LobbyStatus::from(summary));
+}
 
-    // count reactions in each column
+// This is a hack and I'm sure I can do it on the enum but fuck u and fuck this ok
+fn get_response_type_from_heading(heading: String) -> Result<GamerResponseOption, ReactionsError> {
+    for option in GamerResponseOption::VALUES.iter().copied() {
+        if heading == option.heading() {
+            return Ok(option);
+        }
+    }
+    return Err(ReactionsError::ParseHeadingError);
 }
