@@ -8,7 +8,7 @@ use serenity::model::misc::EmojiIdentifier;
 use serenity::model::prelude::*;
 use serenity::prelude::*;
 
-use crate::reactions::GamerResponseOption;
+use crate::reactions::{GamerResponseOption, LobbyStatus};
 use crate::DEFAULT_LIST_STRING;
 
 pub async fn react_to_message(ctx: &Context, message: &Message, emoji_id: u64, emoji_name: String) {
@@ -144,4 +144,8 @@ pub async fn add_mention_to_response_list(
 
 pub fn to_tuple(from: EmbedField) -> (String, String, bool) {
     (from.name, from.value, from.inline)
+}
+
+pub async fn update_message_embed_colour(message: &Message, status: LobbyStatus) -> Result<(), ()> {
+    Ok(())
 }

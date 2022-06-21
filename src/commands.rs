@@ -1,6 +1,10 @@
 use crate::config::AppConfig;
-use crate::reactions::{handle_lobby_reaction, summarise_reactions, GamerResponseOption};
-use crate::util::{respond_to_signup_interaction, respond_to_slash_command};
+use crate::reactions::{
+    handle_lobby_reaction, summarise_reactions, GamerResponseOption, LobbyStatus,
+};
+use crate::util::{
+    respond_to_signup_interaction, respond_to_slash_command, update_message_embed_colour,
+};
 use crate::DEFAULT_LIST_STRING;
 use serenity::model::id::{ChannelId, MessageId};
 use serenity::model::interactions::application_command::{
@@ -64,7 +68,7 @@ impl CommandRunner {
                             e.title("10 Man EOI")
                                 .description(format!("🕒 **{}**", time_string))
                                 .thumbnail("attachment://jonadello.png")
-                                .color(0xff7700)
+                                .color(LobbyStatus::Empty.colour())
                                 .footer(|f| f.text(id))
                                 .fields(vec![
                                     (
@@ -167,7 +171,11 @@ impl CommandRunner {
 
             if let Ok(responses) = handle_lobby_reaction(ctx, reaction.clone(), response).await {
                 if let Ok(embed_status) = summarise_reactions(responses).await {
-                    println!("Lobby has status: {}", embed_status);
+                    if let Err(message) =
+                        update_message_embed_colour(&reaction.message, embed_status).await
+                    {
+                        println!("Error {:?}", message);
+                    }
                 }
             }
         } else {

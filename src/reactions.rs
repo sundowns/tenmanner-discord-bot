@@ -251,7 +251,6 @@ pub async fn summarise_reactions(
             return Err(ReactionsError::ParseHeadingError);
         }
     }
-    println!("{:?}", summary);
     return Ok(LobbyStatus::from(summary));
 }
 
