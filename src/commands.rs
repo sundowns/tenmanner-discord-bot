@@ -1,8 +1,5 @@
 use crate::config::AppConfig;
-use crate::reactions::{
-    handle_late_reaction, handle_maybe_reaction, handle_no_reaction, handle_yes_reaction,
-    GamerResponseOption,
-};
+use crate::reactions::{handle_lobby_reaction, GamerResponseOption};
 use crate::util::{respond_to_signup_interaction, respond_to_slash_command};
 use crate::DEFAULT_LIST_STRING;
 use serenity::model::id::{ChannelId, MessageId};
@@ -161,11 +158,6 @@ impl CommandRunner {
         _config: &AppConfig,
     ) {
         if let Ok(response) = GamerResponseOption::from_str(&reaction.data.custom_id) {
-            println!(
-                "Response received: {} from user: {}",
-                response, reaction.user.name
-            );
-
             respond_to_signup_interaction(
                 ctx,
                 &reaction,
@@ -173,12 +165,7 @@ impl CommandRunner {
             )
             .await;
 
-            match response {
-                GamerResponseOption::Yes => handle_yes_reaction(ctx, reaction).await,
-                GamerResponseOption::No => handle_no_reaction(ctx, reaction).await,
-                GamerResponseOption::Maybe => handle_maybe_reaction(ctx, reaction).await,
-                GamerResponseOption::Late => handle_late_reaction(ctx, reaction).await,
-            }
+            handle_lobby_reaction(ctx, reaction, response).await;
         } else {
             respond_to_signup_interaction(ctx, &reaction, "Failed :c").await;
         }

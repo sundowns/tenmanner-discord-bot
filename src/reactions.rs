@@ -42,6 +42,16 @@ impl GamerResponseOption {
         }
     }
 
+    // The index of the embed's fields array that matches this reaction type
+    pub fn field_index(&self) -> usize {
+        match self {
+            Self::Yes => 0,
+            Self::No => 1,
+            Self::Maybe => 2,
+            Self::Late => 3,
+        }
+    }
+
     pub fn button(&self) -> CreateButton {
         let mut b = CreateButton::default();
         b.custom_id(self.to_string().to_ascii_lowercase());
@@ -76,15 +86,18 @@ impl FromStr for GamerResponseOption {
     }
 }
 
-// TODO: refactor into a single handle_x_reaction function
-pub async fn handle_yes_reaction(ctx: &Context, reaction: MessageComponentInteraction) {
+pub async fn handle_lobby_reaction(
+    ctx: &Context,
+    reaction: MessageComponentInteraction,
+    option: GamerResponseOption,
+) {
     let mut existing_embed = reaction.message.embeds[0].clone();
     let existing_fields = existing_embed.fields.clone();
     existing_embed.fields = vec![];
     let mut message = reaction.message;
 
     // User doesn't exist in this list
-    if !existing_fields[0]
+    if !existing_fields[option.field_index()]
         .value
         .contains(&reaction.user.id.to_string())
     {
@@ -92,8 +105,7 @@ pub async fn handle_yes_reaction(ctx: &Context, reaction: MessageComponentIntera
         let stripped_data =
             strip_mention_from_response_lists(existing_fields.clone(), reaction.user.id).await;
         let data_with_new_user =
-            add_mention_to_response_list(stripped_data, GamerResponseOption::Yes, reaction.user.id)
-                .await;
+            add_mention_to_response_list(stripped_data, option, reaction.user.id).await;
 
         // replace the new_data with the updated one
         let _update_result = message
@@ -107,38 +119,3 @@ pub async fn handle_yes_reaction(ctx: &Context, reaction: MessageComponentIntera
             .await;
     }
 }
-
-pub async fn handle_no_reaction(ctx: &Context, reaction: MessageComponentInteraction) {
-    let mut existing_embed = reaction.message.embeds[0].clone();
-    let existing_fields = existing_embed.fields.clone();
-    existing_embed.fields = vec![];
-    let mut message = reaction.message;
-
-    // User doesn't exist in this list
-    if !existing_fields[1]
-        .value
-        .contains(&reaction.user.id.to_string())
-    {
-        // let user_mention = Mention::User(reaction.user.id);
-        let stripped_data =
-            strip_mention_from_response_lists(existing_fields.clone(), reaction.user.id).await;
-        let data_with_new_user =
-            add_mention_to_response_list(stripped_data, GamerResponseOption::No, reaction.user.id)
-                .await;
-
-        // replace the new_data with the updated one
-        let _update_result = message
-            .edit(&ctx.http, |f| {
-                f.embed(|e| {
-                    *e = CreateEmbed::from(existing_embed);
-                    e.fields(data_with_new_user)
-                        .thumbnail("attachment://jonadello.png")
-                })
-            })
-            .await;
-    }
-}
-
-pub async fn handle_maybe_reaction(_ctx: &Context, _reaction: MessageComponentInteraction) {}
-
-pub async fn handle_late_reaction(_ctx: &Context, _reaction: MessageComponentInteraction) {}
