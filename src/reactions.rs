@@ -33,40 +33,40 @@ impl Error for ReactionsError {}
 #[derive(Clone, Copy)]
 pub enum GamerResponseOption {
     Yes,
-    No,
     Maybe,
     Late,
+    No,
 }
 
 impl fmt::Display for GamerResponseOption {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Yes => write!(f, "Yes"),
-            Self::No => write!(f, "No"),
             Self::Maybe => write!(f, "Maybe"),
             Self::Late => write!(f, "Late"),
+            Self::No => write!(f, "No"),
         }
     }
 }
 
 impl GamerResponseOption {
-    const VALUES: [Self; 4] = [Self::Yes, Self::No, Self::Maybe, Self::Late];
+    const VALUES: [Self; 4] = [Self::Yes, Self::Maybe, Self::No, Self::Late];
 
     pub fn emoji(&self) -> char {
         match self {
             Self::Yes => '✅',
-            Self::No => '❌',
             Self::Maybe => '❔',
             Self::Late => '⌛',
+            Self::No => '❌',
         }
     }
 
     pub fn heading(&self) -> String {
         match self {
             Self::Yes => format!("{} Gamers", self.emoji()),
-            Self::No => format!("{} Rats", self.emoji()),
             Self::Maybe => format!("{} Potential Gamers", self.emoji()),
             Self::Late => format!("{} Late Gamers", self.emoji()),
+            Self::No => format!("{} Rats", self.emoji()),
         }
     }
 
@@ -74,9 +74,9 @@ impl GamerResponseOption {
     pub fn field_index(&self) -> usize {
         match self {
             Self::Yes => 0,
-            Self::No => 1,
-            Self::Maybe => 2,
-            Self::Late => 3,
+            Self::Maybe => 1,
+            Self::Late => 2,
+            Self::No => 3,
         }
     }
 
@@ -93,9 +93,9 @@ impl GamerResponseOption {
         let mut ar = CreateActionRow::default();
         // We can add up to 5 buttons per action row
         ar.add_button(GamerResponseOption::Yes.button());
-        ar.add_button(GamerResponseOption::No.button());
         ar.add_button(GamerResponseOption::Maybe.button());
         ar.add_button(GamerResponseOption::Late.button());
+        ar.add_button(GamerResponseOption::No.button());
         ar
     }
 }
@@ -106,9 +106,9 @@ impl FromStr for GamerResponseOption {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "yes" => Ok(GamerResponseOption::Yes),
-            "no" => Ok(GamerResponseOption::No),
             "maybe" => Ok(GamerResponseOption::Maybe),
             "late" => Ok(GamerResponseOption::Late),
+            "no" => Ok(GamerResponseOption::No),
             _ => Err(()),
         }
     }
@@ -237,14 +237,14 @@ pub async fn summarise_reactions(
                 GamerResponseOption::Yes => {
                     summary.yes = count_for_field;
                 }
-                GamerResponseOption::No => {
-                    summary.no = count_for_field;
-                }
                 GamerResponseOption::Maybe => {
                     summary.maybe = count_for_field;
                 }
                 GamerResponseOption::Late => {
                     summary.late = count_for_field;
+                }
+                GamerResponseOption::No => {
+                    summary.no = count_for_field;
                 }
             }
         } else {

@@ -73,17 +73,17 @@ impl CommandRunner {
                                         false,
                                     ),
                                     (
-                                        GamerResponseOption::No.heading(),
-                                        DEFAULT_LIST_STRING,
-                                        false,
-                                    ),
-                                    (
                                         GamerResponseOption::Maybe.heading(),
                                         DEFAULT_LIST_STRING,
                                         false,
                                     ),
                                     (
                                         GamerResponseOption::Late.heading(),
+                                        DEFAULT_LIST_STRING,
+                                        false,
+                                    ),
+                                    (
+                                        GamerResponseOption::No.heading(),
                                         DEFAULT_LIST_STRING,
                                         false,
                                     ),
