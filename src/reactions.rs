@@ -1,7 +1,9 @@
 use crate::util::{add_mention_to_response_list, strip_mention_from_response_lists};
 use serenity::builder::{CreateActionRow, CreateButton, CreateEmbed};
+use serenity::model::channel::Message;
 use serenity::model::interactions::message_component::{ButtonStyle, MessageComponentInteraction};
 use serenity::prelude::*;
+use serenity::utils::Colour;
 use std::str::FromStr;
 use std::{fmt, vec};
 
@@ -86,6 +88,59 @@ impl FromStr for GamerResponseOption {
     }
 }
 
+static FULL_LOBBY_COUNT: usize = 10;
+
+struct LobbySignupSummary {
+    yes: usize,
+    maybe: usize,
+    no: usize,
+    late: usize,
+}
+
+impl Default for LobbySignupSummary {
+    fn default() -> Self {
+        LobbySignupSummary {
+            yes: 0,
+            maybe: 0,
+            no: 0,
+            late: 0,
+        }
+    }
+}
+
+enum LobbyStatus {
+    Empty,
+    Some,
+    FullWithMaybe,
+    FullYes,
+}
+
+impl LobbyStatus {
+    pub fn colour(&self) -> Colour {
+        match self {
+            Self::Empty => 0xff0000,
+            Self::Some => 0xff7700,
+            Self::FullWithMaybe => 0xffcc00,
+            Self::FullYes => 0x00ff66,
+        }
+    }
+}
+
+impl From<LobbySignupSummary> for LobbyStatus {
+    fn from(summary: LobbySignupSummary) -> Self {
+        if summary.yes >= FULL_LOBBY_COUNT {
+            return LobbyStatus::FullYes;
+        }
+        if summary.yes + summary.maybe >= FULL_LOBBY_COUNT {
+            return LobbyStatus::FullWithMaybe;
+        }
+        if summary.yes + summary.maybe > 0 {
+            return LobbyStatus::Some;
+        }
+        return LobbyStatus::Empty;
+    }
+}
+
 pub async fn handle_lobby_reaction(
     ctx: &Context,
     reaction: MessageComponentInteraction,
@@ -118,4 +173,26 @@ pub async fn handle_lobby_reaction(
             })
             .await;
     }
+}
+
+// Count reactions in each field.
+// Sum all reactions, compare to thresholds and update embed colour accordingly
+pub async fn summarise_reactions(ctx: Context, message: Message) {
+    let mut count: usize = 0;
+    let mut summary = LobbySignupSummary::default();
+
+    if let Some(mut existing_embed) = message.embeds.first() {
+        for field in existing_embed.fields.clone().into_iter() {
+            let count_for_field = field.value.split(" ").count();
+            match field.name {
+                GamerResponseOption::Yes.heading() => {}
+                _ => {}
+            };
+            count += count_for_field;
+        }
+
+        // let status: LobbyStatus = LobbyStatus::from(LobbySignupSummary)
+    }
+
+    // count reactions in each column
 }

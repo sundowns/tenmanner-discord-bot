@@ -1,5 +1,5 @@
 use crate::config::AppConfig;
-use crate::reactions::{handle_lobby_reaction, GamerResponseOption};
+use crate::reactions::{handle_lobby_reaction, summarise_reactions, GamerResponseOption};
 use crate::util::{respond_to_signup_interaction, respond_to_slash_command};
 use crate::DEFAULT_LIST_STRING;
 use serenity::model::id::{ChannelId, MessageId};
@@ -166,6 +166,7 @@ impl CommandRunner {
             .await;
 
             handle_lobby_reaction(ctx, reaction, response).await;
+            summarise_reactions(ctx, reaction.message).await;
         } else {
             respond_to_signup_interaction(ctx, &reaction, "Failed :c").await;
         }
