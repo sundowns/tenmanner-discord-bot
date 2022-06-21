@@ -1,4 +1,4 @@
-use dotenv::dotenv;
+use dotenv::{dotenv, from_filename};
 use std::env;
 
 #[derive(Debug)]
@@ -10,7 +10,12 @@ pub struct AppConfig {
 }
 
 pub fn load_config() -> AppConfig {
-    dotenv().ok();
+    let environment = env::var("ENVIRONMENT").unwrap_or("default".to_string());
+    match environment.as_str() {
+        "prod" => from_filename(".env.prod").ok(),
+        "dev" => from_filename(".env.dev").ok(),
+        _ => dotenv().ok(),
+    };
     let discord_token = env::var("DISCORD_TOKEN").unwrap();
     let guild_id = env::var("GUILD_ID")
         .expect("Expected GUILD_ID in .env")

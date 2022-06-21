@@ -118,10 +118,10 @@ enum LobbyStatus {
 impl LobbyStatus {
     pub fn colour(&self) -> Colour {
         match self {
-            Self::Empty => 0xff0000,
-            Self::Some => 0xff7700,
-            Self::FullWithMaybe => 0xffcc00,
-            Self::FullYes => 0x00ff66,
+            Self::Empty => Colour::new(0xff0000),
+            Self::Some => Colour::new(0xff7700),
+            Self::FullWithMaybe => Colour::new(0xffcc00),
+            Self::FullYes => Colour::new(0x00ff66),
         }
     }
 }
@@ -177,18 +177,18 @@ pub async fn handle_lobby_reaction(
 
 // Count reactions in each field.
 // Sum all reactions, compare to thresholds and update embed colour accordingly
-pub async fn summarise_reactions(ctx: Context, message: Message) {
+pub async fn summarise_reactions(ctx: &Context, message: &Message) {
     let mut count: usize = 0;
     let mut summary = LobbySignupSummary::default();
 
     if let Some(mut existing_embed) = message.embeds.first() {
         for field in existing_embed.fields.clone().into_iter() {
             let count_for_field = field.value.split(" ").count();
-            match field.name {
-                GamerResponseOption::Yes.heading() => {}
-                _ => {}
-            };
-            count += count_for_field;
+            // match field.name {
+            //     GamerResponseOption::Yes.heading() => {}
+            //     _ => {}
+            // };
+            // count += count_for_field;
         }
 
         // let status: LobbyStatus = LobbyStatus::from(LobbySignupSummary)

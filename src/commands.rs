@@ -166,7 +166,7 @@ impl CommandRunner {
             .await;
 
             handle_lobby_reaction(ctx, reaction, response).await;
-            summarise_reactions(ctx, reaction.message).await;
+            // summarise_reactions(ctx, reaction.message).await;
         } else {
             respond_to_signup_interaction(ctx, &reaction, "Failed :c").await;
         }
