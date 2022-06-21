@@ -6,6 +6,8 @@ use serenity::model::interactions::{
 };
 use serenity::model::misc::EmojiIdentifier;
 use serenity::model::prelude::*;
+
+use serenity::builder::CreateEmbed;
 use serenity::prelude::*;
 
 use crate::reactions::{GamerResponseOption, LobbyStatus};
@@ -146,6 +148,23 @@ pub fn to_tuple(from: EmbedField) -> (String, String, bool) {
     (from.name, from.value, from.inline)
 }
 
-pub async fn update_message_embed_colour(message: &Message, status: LobbyStatus) -> Result<(), ()> {
-    Ok(())
+pub async fn update_message_embed_colour(
+    ctx: &Context,
+    mut message: Message,
+    response_data: Vec<(String, String, bool)>,
+    status: LobbyStatus,
+) -> Result<(), SerenityError> {
+    let mut existing_embed = message.embeds[0].clone();
+    existing_embed.fields = vec![];
+    // replace the new_data with the updated one
+    return message
+        .edit(&ctx.http, |f| {
+            f.embed(|e| {
+                *e = CreateEmbed::from(existing_embed);
+                e.colour(status.colour())
+                    .fields(response_data)
+                    .thumbnail("attachment://jonadello.png")
+            })
+        })
+        .await;
 }

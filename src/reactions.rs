@@ -1,14 +1,12 @@
 use crate::util::{add_mention_to_response_list, strip_mention_from_response_lists};
 use crate::DEFAULT_LIST_STRING;
-use serenity::builder::{CreateActionRow, CreateButton, CreateEmbed};
+use serenity::builder::{CreateActionRow, CreateButton};
 use serenity::model::interactions::message_component::{ButtonStyle, MessageComponentInteraction};
-use serenity::prelude::*;
 use serenity::utils::Colour;
 use std::{error::Error, fmt, str::FromStr, vec};
 
 #[derive(Debug)]
 pub enum ReactionsError {
-    EmbedUpdateFailed,
     ParseHeadingError,
     NoUpdateRequired,
 }
@@ -16,7 +14,6 @@ pub enum ReactionsError {
 impl ReactionsError {
     pub fn message(&self) -> &str {
         match self {
-            Self::EmbedUpdateFailed => "Failed to update embed message contents after reaction",
             Self::NoUpdateRequired => "User already responded, no change in data",
             Self::ParseHeadingError => "Failed to parse reaction group heading",
         }
@@ -114,7 +111,7 @@ impl FromStr for GamerResponseOption {
     }
 }
 
-static FULL_LOBBY_COUNT: usize = 10;
+static FULL_LOBBY_COUNT: usize = 2;
 
 #[derive(Debug)]
 struct LobbySignupSummary {
@@ -179,42 +176,26 @@ impl fmt::Display for LobbyStatus {
     }
 }
 
-pub async fn handle_lobby_reaction(
-    ctx: &Context,
+pub async fn build_reaction_data(
     reaction: MessageComponentInteraction,
     option: GamerResponseOption,
 ) -> Result<Vec<(String, String, bool)>, ReactionsError> {
     let mut existing_embed = reaction.message.embeds[0].clone();
     let existing_fields = existing_embed.fields.clone();
     existing_embed.fields = vec![];
-    let mut message = reaction.message;
+    // let mut message = reaction.message;
 
     // User doesn't exist in this list
     if !existing_fields[option.field_index()]
         .value
         .contains(&reaction.user.id.to_string())
     {
-        // let user_mention = Mention::User(reaction.user.id);
         let stripped_data =
             strip_mention_from_response_lists(existing_fields.clone(), reaction.user.id).await;
         let data_with_new_user =
             add_mention_to_response_list(stripped_data, option, reaction.user.id).await;
 
-        // replace the new_data with the updated one
-        if let Ok(_update_result) = message
-            .edit(&ctx.http, |f| {
-                f.embed(|e| {
-                    *e = CreateEmbed::from(existing_embed);
-                    e.fields(data_with_new_user.clone())
-                        .thumbnail("attachment://jonadello.png")
-                })
-            })
-            .await
-        {
-            return Ok(data_with_new_user);
-        } else {
-            return Err(ReactionsError::EmbedUpdateFailed);
-        }
+        return Ok(data_with_new_user);
     }
     return Err(ReactionsError::NoUpdateRequired);
 }

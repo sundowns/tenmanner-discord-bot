@@ -1,6 +1,6 @@
 use crate::config::AppConfig;
 use crate::reactions::{
-    handle_lobby_reaction, summarise_reactions, GamerResponseOption, LobbyStatus,
+    build_reaction_data, summarise_reactions, GamerResponseOption, LobbyStatus,
 };
 use crate::util::{
     respond_to_signup_interaction, respond_to_slash_command, update_message_embed_colour,
@@ -169,10 +169,11 @@ impl CommandRunner {
             )
             .await;
 
-            if let Ok(responses) = handle_lobby_reaction(ctx, reaction.clone(), response).await {
-                if let Ok(embed_status) = summarise_reactions(responses).await {
+            if let Ok(responses) = build_reaction_data(reaction.clone(), response).await {
+                if let Ok(embed_status) = summarise_reactions(responses.clone()).await {
                     if let Err(message) =
-                        update_message_embed_colour(&reaction.message, embed_status).await
+                        update_message_embed_colour(ctx, reaction.message, responses, embed_status)
+                            .await
                     {
                         println!("Error {:?}", message);
                     }
