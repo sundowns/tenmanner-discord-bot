@@ -41,6 +41,6 @@ Run the [AWS CDK](https://docs.aws.amazon.com/cdk/v2/guide/home.html)
 
 - [MVP] Deploy infra (ecr & secrets) via AWS CDK
 - [MVP] Some sort of CI/CD
-- [MVP] Update how we count and remove/insert records to not use spaces. split on `@` or `<>`
+- [MVP] Update how we remove/insert records to not use spaces.
 - [BUG] Records seem to be changing / disappearing - this is probably a concurrency problem. We can't use the post to maintain state if we're allowing concurrent update. Consider storing in a table (dynamo, or even key-value)
 - [JUICE] New slash command `/start <id>` to @ reactors about gaming time
