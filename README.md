@@ -1,6 +1,6 @@
 # Discord Signup Bot
 
-A discord bot, written in Rust with serenity, to create signup posts that users can interact with and indicate attendance. Originally created to organise CS:GO 10 man lobbies, but can really be applied to anything.
+A discord bot, written in Rust with [serenity](https://github.com/serenity-rs/serenity), to create signup posts that users can interact with and indicate attendance. Originally created to organise CS:GO 10 man lobbies, but can really be applied to anything.
 
 ![lobby signup sheet](/media/signup.png)
 
