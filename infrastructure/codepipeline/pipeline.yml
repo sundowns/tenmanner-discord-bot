@@ -108,6 +108,7 @@ Resources:
                   - codebuild:*
                   - iam:PassRole
                   - s3:*
+                  - "secretsmanager:GetSecretValue"
                 Resource: "*"
                 Effect: Allow
             Version: 2012-10-17
@@ -138,7 +139,7 @@ Resources:
               ActionTypeId:
                 Category: Source
                 Owner: ThirdParty
-                Version: "1"
+                Version: "2"
                 Provider: GitHub
               Configuration:
                 Owner: !Ref GitHubUser
