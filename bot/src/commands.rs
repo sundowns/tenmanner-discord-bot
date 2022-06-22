@@ -2,9 +2,7 @@ use crate::config::AppConfig;
 use crate::reactions::{
     build_reaction_data, summarise_reactions, GamerResponseOption, LobbyStatus,
 };
-use crate::util::{
-    respond_to_signup_interaction, respond_to_slash_command, update_message_embed_colour,
-};
+use crate::util::{respond_to_signup_interaction, respond_to_slash_command, update_message_embed};
 use crate::DEFAULT_LIST_STRING;
 use serenity::model::id::{ChannelId, MessageId};
 use serenity::model::interactions::application_command::{
@@ -170,10 +168,9 @@ impl CommandRunner {
             .await;
 
             if let Ok(responses) = build_reaction_data(reaction.clone(), response).await {
-                if let Ok(embed_status) = summarise_reactions(responses.clone()).await {
+                if let Ok(signup_summary) = summarise_reactions(responses.clone()).await {
                     if let Err(message) =
-                        update_message_embed_colour(ctx, reaction.message, responses, embed_status)
-                            .await
+                        update_message_embed(ctx, reaction.message, responses, signup_summary).await
                     {
                         println!("Error {:?}", message);
                     }

@@ -10,7 +10,7 @@ use serenity::model::prelude::*;
 use serenity::builder::CreateEmbed;
 use serenity::prelude::*;
 
-use crate::reactions::{GamerResponseOption, LobbyStatus};
+use crate::reactions::{GamerResponseOption, LobbySignupSummary, LobbyStatus, ReactionsError};
 use crate::DEFAULT_LIST_STRING;
 
 pub async fn react_to_message(ctx: &Context, message: &Message, emoji_id: u64, emoji_name: String) {
@@ -125,20 +125,20 @@ pub async fn add_mention_to_response_list(
 ) -> Vec<(String, String, bool)> {
     let mut return_data: Vec<(String, String, bool)> = vec![];
     // Find tuple in collection that matches `add_to` option
-    for field in data {
-        if field.0 == add_to.heading() {
+    for (name, value, inline) in data {
+        if name.contains(&add_to.heading()) {
             // Add users mention
             let mention = Mention::User(user_id).to_string();
-            let value = if field.1 == DEFAULT_LIST_STRING {
+            let new_value = if value == DEFAULT_LIST_STRING {
                 // If it was empty before, just set it to the mention
                 mention
             } else {
                 // otherwise append it on thened
-                format!("{} {}", field.1, mention)
+                format!("{} {}", value, mention)
             };
-            return_data.push((field.0, value, field.2));
+            return_data.push((name, new_value, inline));
         } else {
-            return_data.push(field);
+            return_data.push((name, value, inline));
         }
     }
     return_data
@@ -148,23 +148,62 @@ pub fn to_tuple(from: EmbedField) -> (String, String, bool) {
     (from.name, from.value, from.inline)
 }
 
-pub async fn update_message_embed_colour(
+pub async fn update_message_embed(
     ctx: &Context,
     mut message: Message,
     response_data: Vec<(String, String, bool)>,
-    status: LobbyStatus,
+    summary: LobbySignupSummary,
 ) -> Result<(), SerenityError> {
+    let status = LobbyStatus::from(summary);
     let mut existing_embed = message.embeds[0].clone();
     existing_embed.fields = vec![];
+    let embed_colour = status.colour();
+
+    let data_with_count_in_headings = add_count_to_response_headings(response_data, summary);
     // replace the new_data with the updated one
     return message
         .edit(&ctx.http, |f| {
             f.embed(|e| {
                 *e = CreateEmbed::from(existing_embed);
-                e.colour(status.colour())
-                    .fields(response_data)
+                e.colour(embed_colour)
+                    .fields(data_with_count_in_headings)
                     .thumbnail("attachment://jonadello.png")
             })
         })
         .await;
+}
+
+fn add_count_to_response_headings(
+    response_data: Vec<(String, String, bool)>,
+    summary: LobbySignupSummary,
+) -> Vec<(String, String, bool)> {
+    let mut new_data: Vec<(String, String, bool)> = vec![];
+    for (name, value, inline) in response_data {
+        if let Ok(response_type) = get_response_type_from_heading(name.clone()) {
+            new_data.push((
+                format!(
+                    "{}   [{}]",
+                    response_type.heading(),
+                    summary.value_for_response_type(response_type)
+                ),
+                value,
+                inline,
+            ));
+        } else {
+            new_data.push((name, value, inline));
+        }
+    }
+    new_data
+}
+
+// This is a hack and I'm sure I can do it on the enum but fuck u and fuck this ok
+pub fn get_response_type_from_heading(
+    heading: String,
+) -> Result<GamerResponseOption, ReactionsError> {
+    for option in GamerResponseOption::VALUES.iter().copied() {
+        if heading.contains(&option.heading()) {
+            return Ok(option);
+        }
+    }
+    return Err(ReactionsError::ParseHeadingError);
 }

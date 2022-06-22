@@ -1,4 +1,6 @@
-use crate::util::{add_mention_to_response_list, strip_mention_from_response_lists};
+use crate::util::{
+    add_mention_to_response_list, get_response_type_from_heading, strip_mention_from_response_lists,
+};
 use crate::DEFAULT_LIST_STRING;
 use serenity::builder::{CreateActionRow, CreateButton};
 use serenity::model::interactions::message_component::{ButtonStyle, MessageComponentInteraction};
@@ -47,7 +49,7 @@ impl fmt::Display for GamerResponseOption {
 }
 
 impl GamerResponseOption {
-    const VALUES: [Self; 4] = [Self::Yes, Self::Maybe, Self::No, Self::Late];
+    pub const VALUES: [Self; 4] = [Self::Yes, Self::Maybe, Self::No, Self::Late];
 
     pub fn emoji(&self) -> char {
         match self {
@@ -111,10 +113,10 @@ impl FromStr for GamerResponseOption {
     }
 }
 
-static FULL_LOBBY_COUNT: usize = 2;
+static FULL_LOBBY_COUNT: usize = 10;
 
-#[derive(Debug)]
-struct LobbySignupSummary {
+#[derive(Debug, Clone, Copy)]
+pub struct LobbySignupSummary {
     yes: usize,
     maybe: usize,
     no: usize,
@@ -128,6 +130,17 @@ impl Default for LobbySignupSummary {
             maybe: 0,
             no: 0,
             late: 0,
+        }
+    }
+}
+
+impl LobbySignupSummary {
+    pub fn value_for_response_type(&self, response_type: GamerResponseOption) -> usize {
+        match response_type {
+            GamerResponseOption::Yes => self.yes,
+            GamerResponseOption::Maybe => self.maybe,
+            GamerResponseOption::No => self.no,
+            GamerResponseOption::Late => self.late,
         }
     }
 }
@@ -204,16 +217,16 @@ pub async fn build_reaction_data(
 // Sum all reactions, compare to thresholds and update embed colour accordingly
 pub async fn summarise_reactions(
     reactions: Vec<(String, String, bool)>,
-) -> Result<LobbyStatus, ReactionsError> {
+) -> Result<LobbySignupSummary, ReactionsError> {
     let mut summary = LobbySignupSummary::default();
 
-    for field in reactions.into_iter() {
-        let count_for_field = if field.1 == DEFAULT_LIST_STRING {
+    for (name, value, _inline) in reactions.into_iter() {
+        let count_for_field = if value == DEFAULT_LIST_STRING {
             0
         } else {
-            field.1.split(" ").count()
+            value.matches('@').count()
         };
-        if let Ok(option_type) = get_response_type_from_heading(field.0) {
+        if let Ok(option_type) = get_response_type_from_heading(name) {
             match option_type {
                 GamerResponseOption::Yes => {
                     summary.yes = count_for_field;
@@ -232,15 +245,5 @@ pub async fn summarise_reactions(
             return Err(ReactionsError::ParseHeadingError);
         }
     }
-    return Ok(LobbyStatus::from(summary));
-}
-
-// This is a hack and I'm sure I can do it on the enum but fuck u and fuck this ok
-fn get_response_type_from_heading(heading: String) -> Result<GamerResponseOption, ReactionsError> {
-    for option in GamerResponseOption::VALUES.iter().copied() {
-        if heading == option.heading() {
-            return Ok(option);
-        }
-    }
-    return Err(ReactionsError::ParseHeadingError);
+    return Ok(summary);
 }
