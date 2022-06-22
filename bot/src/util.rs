@@ -95,6 +95,7 @@ pub async fn strip_mention_from_response_lists(
     for field in data {
         if field.value.contains(&user_id.to_string()) {
             // Includes an existing mention, remove it and add the data
+            // TODO: figure out a better way to do this
             let removed: String = field
                 .value
                 .split(" ")
