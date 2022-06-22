@@ -1,4 +1,5 @@
 /target
+/bot/target
 .env
 .env.prod
 .env.dev

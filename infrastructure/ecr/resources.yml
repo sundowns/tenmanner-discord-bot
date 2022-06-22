@@ -1,0 +1,16 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  # WebAppBucketNamePrefix:
+  #   Type: String
+  #   Default: voronoi-webapp
+
+Resources:
+  # GoogleMapsAPISecret:
+  #   Type: AWS::SecretsManager::Secret
+  #   DeletionPolicy: Retain
+  #   UpdateReplacePolicy: Retain
+  #   Properties:
+  #     Description: "Google Maps API Key"
+  #     Name: GoogleApiKey
+  #     SecretString: "ChangeMe"

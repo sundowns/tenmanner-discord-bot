@@ -1,0 +1,198 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  GitHubRepo:
+    Type: String
+    Default: tenmanner-discord-bot
+  GitHubBranch:
+    Type: String
+    Default: master
+  GitHubToken:
+    Type: String
+    Description: The Oauth token
+    Default: "{{resolve:secretsmanager:GitHubSecrets:SecretString:GitHubToken}}"
+  GitHubUser:
+    Type: String
+    Description: Owner of the repository
+    Default: "{{resolve:secretsmanager:GitHubSecrets:SecretString:GitHubUser}}"
+
+  ProjectName:
+    Type: String
+    Default: Discord10Manner
+  PipelineStackName:
+    Type: String
+    Default: Discord10MannerDeploymentStack
+  PipelineArtifactBucketName:
+    Type: String
+    Default: discord-10-manner
+
+Resources:
+  CodeBuildRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      RoleName: !Sub ${ProjectName}CodeBuildRole
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: [codebuild.amazonaws.com]
+            Action: ["sts:AssumeRole"]
+      Path: /
+      Policies:
+        - PolicyName: codebuild-deployment
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Sid: "BuildPermissions"
+                Effect: Allow
+                Action:
+                  - "codebuild:*"
+                  - "logs:*"
+                  - "s3:*"
+                  - "secretsmanager:GetSecretValue"
+                Resource:
+                  - "*"
+
+  CloudFormationDeployActionRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: ["sts:AssumeRole"]
+            Effect: Allow
+            Principal:
+              Service: [cloudformation.amazonaws.com]
+        Version: "2012-10-17"
+      Path: /
+      Policies:
+        - PolicyName: DeployResources
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Action:
+                  - "cloudformation:*"
+                  - "codebuild:*"
+                  - "codepipeline:*"
+                  - "ec2:*"
+                  - "iam:*"
+                  - "s3:*"
+                  - "secretsmanager:*"
+                  - "ssm:GetParameters"
+                Effect: Allow
+                Resource: "*"
+      RoleName: !Sub ${ProjectName}CloudFormationDeployerRole
+
+  CodePipelineRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - codepipeline.amazonaws.com
+            Action:
+              - "sts:AssumeRole"
+      Path: /
+      Policies:
+        - PolicyName: codepipeline-service
+          PolicyDocument:
+            Statement:
+              - Action: ["sts:AssumeRole"]
+                Effect: Allow
+                Resource:
+                  - !GetAtt CloudFormationDeployActionRole.Arn
+              - Action:
+                  - cloudformation:*
+                  - codebuild:*
+                  - iam:PassRole
+                  - s3:*
+                Resource: "*"
+                Effect: Allow
+            Version: 2012-10-17
+      RoleName: !Sub ${ProjectName}CodePipelineRole
+
+  CodePipelineArtifactStore:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName:
+        !Join ["-", [!Ref "PipelineArtifactBucketName", !Ref "AWS::AccountId"]]
+
+  CodePipeline:
+    Type: "AWS::CodePipeline::Pipeline"
+    Properties:
+      Name: !Sub ${ProjectName}Pipeline
+      RoleArn: !GetAtt CodePipelineRole.Arn
+      RestartExecutionOnUpdate: true
+      ArtifactStore:
+        Type: S3
+        Location: !Ref CodePipelineArtifactStore
+        # EncryptionKey:
+        #   Type: KMS
+        #   Id: !Ref ArtifactStoreSydneyKMSKeyId
+      Stages:
+        - Name: Source
+          Actions:
+            - Name: GithubSource
+              ActionTypeId:
+                Category: Source
+                Owner: ThirdParty
+                Version: "1"
+                Provider: GitHub
+              Configuration:
+                Owner: !Ref GitHubUser
+                Repo: !Ref GitHubRepo
+                Branch: !Ref GitHubBranch
+                OAuthToken: !Ref GitHubToken
+                PollForSourceChanges: true
+              OutputArtifacts:
+                - Name: GitHubSource
+        - Name: "DeployPipelineResource"
+          Actions:
+            - Name: "DeployPipelineResource"
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Provider: CloudFormation
+                Version: "1"
+              Configuration:
+                ActionMode: CREATE_UPDATE
+                Capabilities: CAPABILITY_NAMED_IAM
+                RoleArn: !GetAtt CloudFormationDeployActionRole.Arn
+                StackName: !Ref PipelineStackName
+                TemplatePath: GitHubSource::infrastructure/codepipeline/pipeline.yml
+              InputArtifacts:
+                - Name: GitHubSource
+        - Name: DeployResources
+          Actions:
+            - Name: DeploySecrets
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Provider: CloudFormation
+                Version: "1"
+              Configuration:
+                ActionMode: CREATE_UPDATE
+                Capabilities: CAPABILITY_NAMED_IAM
+                RoleArn: !GetAtt CloudFormationDeployActionRole.Arn
+                StackName: !Sub ${ProjectName}SecretsStack
+                TemplatePath: GitHubSource::infrastructure/secrets/resources.yml
+              InputArtifacts:
+                - Name: GitHubSource
+              RunOrder: 1
+            # - Name: DeployEcr
+            #   ActionTypeId:
+            #     Category: Deploy
+            #     Owner: AWS
+            #     Provider: CloudFormation
+            #     Version: "1"
+            #   Configuration:
+            #     ActionMode: CREATE_UPDATE
+            #     Capabilities: CAPABILITY_NAMED_IAM
+            #     RoleArn: !GetAtt CloudFormationDeployActionRole.Arn
+            #     StackName: !Sub ${ProjectName}EcrStack
+            #     TemplatePath: GitHubSource::infrastructure/ecr/resources.yml
+            #   InputArtifacts:
+            #     - Name: GitHubSource
+            #   RunOrder: 1
