@@ -9,7 +9,35 @@ A discord bot, written in Rust with [serenity](https://github.com/serenity-rs/se
 - `/lobby <when>` - Create a new signup post
 - `/delete <id>` - Deletes a signup post using the provided ID. The ID of a post is displayed in the footster of a signup post
 
-# Outstanding work / TODO
+---
+
+## Configuring the bot
+
+There are two configuration files, one for the bot and one for infrastructure. The latter is only required to use the AWS CDK deployment bundled, but the bot can be deployed through any other means.
+
+Make a copy of `.env.template` file under `/bot` in the same directory and rename it to `.env`. Provide values for each of the environment variables.
+
+## Running the bot
+
+`cargo run`
+
+Optionally a value for the ENVIRONMENT env var can be provided to instead pull config values from `.env.prod` or `.env.dev`.
+
+`ENVIRONMENT=prod cargo run`
+`ENVIRONMENT=dev cargo run`
+
+When not provided, the default `.env` file is used.
+
+## Deploying with the AWS CDK
+
+Populate the values in `/infrastructure/.env`.
+
+Run the [AWS CDK](https://docs.aws.amazon.com/cdk/v2/guide/home.html)
+`cdk deploy`
+
+---
+
+## Outstanding work / TODO
 
 - [CORE] Host the bot in AWS
 - [CORE] Some sort of deployment/restart so i dont have to ssh in
