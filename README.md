@@ -11,7 +11,7 @@ A discord bot, written in Rust with [serenity](https://github.com/serenity-rs/se
 
 ---
 
-## Configuring the bot
+## Configuring the botlocal
 
 There are two configuration files, one for the bot and one for infrastructure. The latter is only required to use the AWS CDK deployment bundled, but the bot can be deployed through any other means.
 
@@ -33,14 +33,15 @@ When not provided, the default `.env` file is used.
 Populate the values in `/infrastructure/.env`.
 
 Run the [AWS CDK](https://docs.aws.amazon.com/cdk/v2/guide/home.html)
-`cdk deploy`
+`cdk deploy --all`
 
 ---
 
 ## Outstanding work / TODO
 
-- [MVP] Deploy infra (ecr & secrets) via AWS CDK
-- [MVP] Some sort of CI/CD
-- [MVP] Update how we remove/insert records to not use spaces.
-- [BUG] Records seem to be changing / disappearing - this is probably a concurrency problem. We can't use the post to maintain state if we're allowing concurrent update. Consider storing in a table (dynamo, or even key-value)
+- [DEPLOYMENT] Create and upload machine image to ECR
+- [DEPLOYMENT] Deploy EC2 instance and autostart bot (with userdata file)
+- [DEPLOYMENT] Provide config for bot deployment
+- [MVP/BUG] Update how we remove/insert records to not use spaces.
+- [MVP/BUG] Records seem to be changing / disappearing - this is probably a concurrency problem. We can't use the post to maintain state if we're allowing concurrent update. Consider storing in a table (dynamo, or even key-value)
 - [JUICE] New slash command `/start <id>` to @ reactors about gaming time
