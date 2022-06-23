@@ -7,6 +7,7 @@ extern crate lazy_static;
 pub mod commands;
 pub mod config;
 pub mod reactions;
+pub mod sheets;
 pub mod util;
 
 use crate::commands::{CommandRunner, SlashCommands};
