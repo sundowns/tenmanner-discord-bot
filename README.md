@@ -39,7 +39,7 @@ Run the [AWS CDK](https://docs.aws.amazon.com/cdk/v2/guide/home.html)
 
 ## Outstanding work / TODO
 
-- [MVP] Use google sheets to store data and just read from the sheet to make embed
+- [MVP] Use google sheets to store data and just read from the sheet to make embed - [Google Sheets Crate](https://github.com/Byron/google-apis-rs/tree/main/gen/sheets4)
 - [DEPLOYMENT] Create and upload machine image to ECR
 - [DEPLOYMENT] Deploy EC2 instance and autostart bot (with userdata file)
 - [DEPLOYMENT] Provide config for bot deployment
