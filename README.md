@@ -39,9 +39,8 @@ Run the [AWS CDK](https://docs.aws.amazon.com/cdk/v2/guide/home.html)
 
 ## Outstanding work / TODO
 
+- [MVP] Use google sheets to store data and just read from the sheet to make embed
 - [DEPLOYMENT] Create and upload machine image to ECR
 - [DEPLOYMENT] Deploy EC2 instance and autostart bot (with userdata file)
 - [DEPLOYMENT] Provide config for bot deployment
-- [MVP/BUG] Update how we remove/insert records to not use spaces.
-- [MVP/BUG] Records seem to be changing / disappearing - this is probably a concurrency problem. We can't use the post to maintain state if we're allowing concurrent update. Consider storing in a table (dynamo, or even key-value)
 - [JUICE] New slash command `/start <id>` to @ reactors about gaming time
