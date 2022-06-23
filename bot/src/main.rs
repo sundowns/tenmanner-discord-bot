@@ -7,7 +7,7 @@ extern crate lazy_static;
 pub mod commands;
 pub mod config;
 pub mod reactions;
-pub mod sheets;
+pub mod sheets_manager;
 pub mod util;
 
 use crate::commands::{CommandRunner, SlashCommands};
@@ -19,6 +19,7 @@ use serenity::model::interactions::{
     Interaction,
 };
 use serenity::prelude::*;
+use sheets_manager::SheetsManager;
 use util::{check_for_senders_role, respond_to_slash_command};
 
 use std::str::FromStr;
@@ -29,7 +30,16 @@ lazy_static! {
 
 static DEFAULT_LIST_STRING: &str = "...";
 
-struct Handler;
+struct Handler {
+    sheets_manager: SheetsManager,
+}
+
+impl Handler {
+    async fn new(sheets_manager: SheetsManager) -> Handler {
+        sheets_manager.initialise("My new sheet".to_string()).await;
+        Handler { sheets_manager }
+    }
+}
 
 #[async_trait]
 impl EventHandler for Handler {
@@ -100,6 +110,12 @@ impl EventHandler for Handler {
 
 #[tokio::main]
 async fn main() {
+    let sheets_client: SheetsManager = sheets_manager::login(
+        CONFIG.google_sheets_client_id.clone(),
+        CONFIG.google_sheets_client_secret.clone(),
+    )
+    .await;
+
     // Build our client.
     let mut client = Client::builder(
         &CONFIG.discord_token,
@@ -107,9 +123,9 @@ async fn main() {
             | GatewayIntents::GUILD_MESSAGES
             | GatewayIntents::GUILD_MESSAGE_REACTIONS,
     )
-    .event_handler(Handler)
+    .event_handler(Handler::new(sheets_client).await)
     .await
-    .expect("Error creating client");
+    .expect("ErroONFIGcreating client");
 
     // Finally, start a single shard, and start listening to events.
     // Shards will automatically attempt to reconnect, and will perform
