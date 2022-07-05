@@ -7,7 +7,7 @@ extern crate lazy_static;
 pub mod commands;
 pub mod config;
 pub mod reactions;
-pub mod sheets_manager;
+pub mod storage_manager;
 pub mod util;
 
 use crate::commands::{CommandRunner, SlashCommands};
@@ -19,7 +19,7 @@ use serenity::model::interactions::{
     Interaction,
 };
 use serenity::prelude::*;
-use sheets_manager::SheetsManager;
+use storage_manager::StorageManager;
 use util::{check_for_senders_role, respond_to_slash_command};
 
 use std::str::FromStr;
@@ -31,13 +31,13 @@ lazy_static! {
 static DEFAULT_LIST_STRING: &str = "...";
 
 struct Handler {
-    sheets_manager: SheetsManager,
+    storage_manager: StorageManager,
 }
 
 impl Handler {
-    async fn new(sheets_manager: SheetsManager) -> Handler {
-        sheets_manager.initialise("My new sheet".to_string()).await;
-        Handler { sheets_manager }
+    async fn new(storage_manager: StorageManager) -> Handler {
+        storage_manager.initialise().await;
+        Handler { storage_manager }
     }
 }
 
@@ -110,11 +110,7 @@ impl EventHandler for Handler {
 
 #[tokio::main]
 async fn main() {
-    let sheets_client: SheetsManager = sheets_manager::login(
-        CONFIG.google_sheets_client_id.clone(),
-        CONFIG.google_sheets_client_secret.clone(),
-    )
-    .await;
+    let storage_client: StorageManager = StorageManager::default();
 
     // Build our client.
     let mut client = Client::builder(
@@ -123,7 +119,7 @@ async fn main() {
             | GatewayIntents::GUILD_MESSAGES
             | GatewayIntents::GUILD_MESSAGE_REACTIONS,
     )
-    .event_handler(Handler::new(sheets_client).await)
+    .event_handler(Handler::new(storage_client).await)
     .await
     .expect("ErroONFIGcreating client");
 
