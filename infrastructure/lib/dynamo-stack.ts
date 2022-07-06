@@ -7,6 +7,7 @@ export class DynamoStack extends Stack {
     super(scope, id, props);
 
     const table = new dynamodb.Table(this, "tenmannerreactions", {
+      tableName: "tenmannerreactions",
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
       removalPolicy: RemovalPolicy.DESTROY,
       partitionKey: { name: "post_id", type: dynamodb.AttributeType.STRING },
@@ -15,5 +16,12 @@ export class DynamoStack extends Stack {
 
     console.log("Table name:", table.tableName);
     console.log("Table arn:", table.tableArn);
+
+    // 👇 add local secondary index
+    table.addLocalSecondaryIndex({
+      indexName: "responseIndex",
+      sortKey: { name: "response", type: dynamodb.AttributeType.STRING },
+      projectionType: dynamodb.ProjectionType.ALL,
+    });
   }
 }
