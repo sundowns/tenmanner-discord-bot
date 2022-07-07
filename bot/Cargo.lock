@@ -1332,6 +1332,7 @@ version = "0.1.0"
 dependencies = [
  "aws-config",
  "aws-sdk-dynamodb",
+ "aws-types",
  "dotenv",
  "lazy_static",
  "serenity",

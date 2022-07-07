@@ -7,8 +7,6 @@ pub struct AppConfig {
     pub guild_id: u64,
     pub lobby_channel_id: u64,
     pub organiser_role_id: u64,
-    pub google_sheets_client_id: String,
-    pub google_sheets_client_secret: String,
 }
 
 pub fn load_config() -> AppConfig {
@@ -31,14 +29,10 @@ pub fn load_config() -> AppConfig {
         .expect("Expected ORGANISER_ROLE_ID in .env")
         .parse()
         .expect("ORGANISER_ROLE_ID must be an integer");
-    let google_sheets_client_id = env::var("GOOGLE_SHEETS_CLIENT_ID").unwrap();
-    let google_sheets_client_secret = env::var("GOOGLE_SHEETS_CLIENT_SECRET").unwrap();
     AppConfig {
         discord_token,
         guild_id,
         lobby_channel_id,
         organiser_role_id,
-        google_sheets_client_id,
-        google_sheets_client_secret,
     }
 }

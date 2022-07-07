@@ -31,12 +31,11 @@ lazy_static! {
 static DEFAULT_LIST_STRING: &str = "...";
 
 struct Handler {
-    storage_manager: StorageManager,
+    pub storage_manager: StorageManager,
 }
 
 impl Handler {
     async fn new(storage_manager: StorageManager) -> Handler {
-        storage_manager.initialise().await;
         Handler { storage_manager }
     }
 }
@@ -71,7 +70,13 @@ impl EventHandler for Handler {
         } else if let Interaction::MessageComponent(reaction) = interaction {
             // Handle component reactions (embed button presses etc)
             if reaction.channel_id == CONFIG.lobby_channel_id {
-                CommandRunner::handle_signup_response(&ctx, reaction, &CONFIG).await;
+                CommandRunner::handle_signup_response(
+                    &ctx,
+                    &self.storage_manager,
+                    reaction,
+                    &CONFIG,
+                )
+                .await;
             }
         }
     }
@@ -110,7 +115,7 @@ impl EventHandler for Handler {
 
 #[tokio::main]
 async fn main() {
-    let storage_client: StorageManager = StorageManager::default();
+    let storage_client: StorageManager = storage_manager::login().await;
 
     // Build our client.
     let mut client = Client::builder(
@@ -121,7 +126,7 @@ async fn main() {
     )
     .event_handler(Handler::new(storage_client).await)
     .await
-    .expect("ErroONFIGcreating client");
+    .expect("Error creating client");
 
     // Finally, start a single shard, and start listening to events.
     // Shards will automatically attempt to reconnect, and will perform

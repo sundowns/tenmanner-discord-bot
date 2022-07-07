@@ -2,6 +2,7 @@ use crate::config::AppConfig;
 use crate::reactions::{
     build_reaction_data, summarise_reactions, GamerResponseOption, LobbyStatus,
 };
+use crate::storage_manager::StorageManager;
 use crate::util::{respond_to_signup_interaction, respond_to_slash_command, update_message_embed};
 use crate::DEFAULT_LIST_STRING;
 use serenity::model::id::{ChannelId, MessageId};
@@ -156,16 +157,38 @@ impl CommandRunner {
 
     pub async fn handle_signup_response(
         ctx: &Context,
+        storage_manager: &StorageManager,
         reaction: MessageComponentInteraction,
         _config: &AppConfig,
     ) {
         if let Ok(response) = GamerResponseOption::from_str(&reaction.data.custom_id) {
-            respond_to_signup_interaction(
-                ctx,
-                &reaction,
-                format!("{} **{}** response received.", response.emoji(), response),
-            )
-            .await;
+            match storage_manager
+                .insert_reaction(
+                    reaction.message.id.to_string(),
+                    reaction.user.id.to_string(),
+                    response,
+                )
+                .await
+            {
+                Ok(_) => {
+                    respond_to_signup_interaction(
+                        ctx,
+                        &reaction,
+                        format!("{} **{}** response received.", response.emoji(), response),
+                    )
+                    .await;
+                }
+                Err(err) => {
+                    println!("{}", err.to_string());
+
+                    respond_to_signup_interaction(
+                        ctx,
+                        &reaction,
+                        format!("Something went wrong :c."),
+                    )
+                    .await;
+                }
+            };
 
             if let Ok(responses) = build_reaction_data(reaction.clone(), response).await {
                 if let Ok(signup_summary) = summarise_reactions(responses.clone()).await {
