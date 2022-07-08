@@ -22,7 +22,10 @@ impl StorageManager {
             .item("user_id", AttributeValue::S(user_id))
             .item("response", AttributeValue::S(reaction.to_string()));
 
-        request.send().await?;
+        if let Err(error) = request.send().await {
+            println!("Error on insert_reaction: {}", error);
+            return Err(error);
+        }
 
         Ok(())
     }
