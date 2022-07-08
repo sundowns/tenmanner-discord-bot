@@ -115,7 +115,8 @@ impl EventHandler for Handler {
 
 #[tokio::main]
 async fn main() {
-    let storage_client: StorageManager = storage_manager::login().await;
+    let storage_client: StorageManager =
+        storage_manager::initialise(CONFIG.table_name.clone()).await;
 
     // Build our client.
     let mut client = Client::builder(

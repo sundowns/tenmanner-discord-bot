@@ -5,5 +5,5 @@ export interface DaddysStackProps extends StackProps {
 }
 
 export interface DaddysLittleEnvironment extends Environment {
-  table_name: string;
+  table_name: string | undefined;
 }

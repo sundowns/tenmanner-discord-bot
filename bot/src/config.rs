@@ -7,6 +7,7 @@ pub struct AppConfig {
     pub guild_id: u64,
     pub lobby_channel_id: u64,
     pub organiser_role_id: u64,
+    pub table_name: String,
 }
 
 pub fn load_config() -> AppConfig {
@@ -29,10 +30,12 @@ pub fn load_config() -> AppConfig {
         .expect("Expected ORGANISER_ROLE_ID in .env")
         .parse()
         .expect("ORGANISER_ROLE_ID must be an integer");
+    let table_name = env::var("DYNAMO_TABLE_NAME").unwrap();
     AppConfig {
         discord_token,
         guild_id,
         lobby_channel_id,
         organiser_role_id,
+        table_name,
     }
 }

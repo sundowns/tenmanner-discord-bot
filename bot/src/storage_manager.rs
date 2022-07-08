@@ -1,9 +1,24 @@
-use aws_sdk_dynamodb::{error::PutItemError, model::AttributeValue, types::SdkError, Client};
+use aws_sdk_dynamodb::{
+    error::{PutItemError, QueryError},
+    model::AttributeValue,
+    output::QueryOutput,
+    types::SdkError,
+    Client,
+};
+use serenity::model::id::UserId;
 
 use crate::reactions::GamerResponseOption;
 
 pub struct StorageManager {
     pub dynamo_client: Client,
+    table_name: String,
+}
+
+pub struct PostReactionsDto {
+    pub yes: Box<UserId>,
+    pub maybe: Box<UserId>,
+    pub late: Box<UserId>,
+    pub no: Box<UserId>,
 }
 
 impl StorageManager {
@@ -17,7 +32,7 @@ impl StorageManager {
         let request = self
             .dynamo_client
             .put_item()
-            .table_name("tenmannerreactions")
+            .table_name(self.table_name.clone())
             .item("post_id", AttributeValue::S(post_id))
             .item("user_id", AttributeValue::S(user_id))
             .item("response", AttributeValue::S(reaction.to_string()));
@@ -29,13 +44,49 @@ impl StorageManager {
 
         Ok(())
     }
+
+    pub async fn get_reactions_for_post(
+        &self,
+        post_id: String,
+    ) -> Result<PostReactionsDto, SdkError<QueryError>> {
+        match self
+            .dynamo_client
+            .query()
+            .table_name(self.table_name.clone())
+            .key_condition_expression("post_id = :post_id_value")
+            .expression_attribute_values(":post_id_value", AttributeValue::S(post_id))
+            .send()
+            .await
+        {
+            Ok(result) => {
+                let summary = Self::query_result_to_summary(result);
+                Ok(summary)
+            }
+            Err(err) => {
+                println!("Error querying for reactions: {}", &err);
+                Err(err)
+            }
+        }
+    }
+
+    fn query_result_to_summary(query_output: QueryOutput) -> PostReactionsDto {
+        dbg!(query_output.items);
+        // TODO: iterate over the query results and produce values for this
+        PostReactionsDto {
+            yes: Box::default(),
+            maybe: Box::default(),
+            late: Box::default(),
+            no: Box::default(),
+        }
+    }
 }
 
-pub async fn login() -> StorageManager {
+pub async fn initialise(table_name: String) -> StorageManager {
     let config = aws_config::load_from_env().await;
     // let config = SdkConfig::builder().credentials_provider(SharedC).build();
     let client = Client::new(&config);
     StorageManager {
         dynamo_client: client,
+        table_name,
     }
 }

@@ -22,13 +22,7 @@ export class IamStack extends Stack {
         resources: [
           `arn:aws:dynamodb:${props?.env.region}:${props?.env.account}:table/${props?.env.table_name}`,
         ],
-        actions: [
-          "dynamodb:Describe*",
-          "dynamodb:Get*",
-          "dynamodb:Put*",
-          "dynamodb:Scan",
-          "dynamodb:Query",
-        ],
+        actions: ["dynamodb:Describe*", "dynamodb:Put*", "dynamodb:Query"],
       })
     );
     user_policy.attachToUser(user);

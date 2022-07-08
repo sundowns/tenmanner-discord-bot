@@ -177,6 +177,11 @@ impl CommandRunner {
                         format!("{} **{}** response received.", response.emoji(), response),
                     )
                     .await;
+
+                    // TODO: query for data and then update the actual post here
+                    let result = storage_manager
+                        .get_reactions_for_post(reaction.message.id.to_string())
+                        .await;
                 }
                 Err(err) => {
                     println!("{}", err.to_string());

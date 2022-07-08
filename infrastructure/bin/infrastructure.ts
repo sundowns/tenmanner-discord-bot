@@ -11,7 +11,7 @@ const APP_NAME_PREFIX = "Discord10Manner";
 const env: DaddysLittleEnvironment = {
   account: process.env.CDK_DEFAULT_ACCOUNT,
   region: process.env.CDK_DEFAULT_REGION,
-  table_name: "tenmannerreactions",
+  table_name: process.env.DYNAMO_TABLE_NAME,
 };
 
 new DynamoStack(app, `${APP_NAME_PREFIX}StorageStack`, {
