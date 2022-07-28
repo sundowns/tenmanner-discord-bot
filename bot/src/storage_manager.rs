@@ -70,14 +70,23 @@ impl StorageManager {
     }
 
     fn query_result_to_summary(query_output: QueryOutput) -> PostReactionsDto {
-        dbg!(query_output.items);
-        // TODO: iterate over the query results and produce values for this
-        PostReactionsDto {
+        let mut summary = PostReactionsDto {
             yes: Box::default(),
             maybe: Box::default(),
             late: Box::default(),
             no: Box::default(),
+        };
+        for item in query_output.items {
+            for record in item {
+                let post_id = record.get("post_id").unwrap().as_s().unwrap();
+                let user_id = record.get("user_id").unwrap().as_s().unwrap();
+                let response = record.get("response").unwrap().as_s().unwrap();
+                println!("{:?}:{:?}:{:?}", post_id, user_id, response);
+                // TODO: update the values in the summary
+            }
         }
+        summary
+        // TODO: iterate over the query results and produce values for this
     }
 }
 
