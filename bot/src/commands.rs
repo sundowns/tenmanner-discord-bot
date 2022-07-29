@@ -178,10 +178,15 @@ impl CommandRunner {
                     )
                     .await;
 
-                    // TODO: query for data and then update the actual post here
-                    let result = storage_manager
+                    if let Ok(result) = storage_manager
                         .get_reactions_for_post(reaction.message.id.to_string())
-                        .await;
+                        .await
+                    {
+                        dbg!(result);
+                        // TODO: actually set the values of the post using this result
+                    } else {
+                        println!("Failed to fetch data from dynamo table")
+                    }
                 }
                 Err(err) => {
                     println!("{}", err.to_string());
@@ -194,7 +199,7 @@ impl CommandRunner {
                     .await;
                 }
             };
-
+            // TODO: Remove below when replaced by the dynamo query result
             if let Ok(responses) = build_reaction_data(reaction.clone(), response).await {
                 if let Ok(signup_summary) = summarise_reactions(responses.clone()).await {
                     if let Err(message) =

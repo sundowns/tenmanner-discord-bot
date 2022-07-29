@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use aws_sdk_dynamodb::{
     error::{PutItemError, QueryError},
     model::AttributeValue,
@@ -14,11 +16,12 @@ pub struct StorageManager {
     table_name: String,
 }
 
+#[derive(Debug)]
 pub struct PostReactionsDto {
-    pub yes: Box<UserId>,
-    pub maybe: Box<UserId>,
-    pub late: Box<UserId>,
-    pub no: Box<UserId>,
+    pub yes: Vec<UserId>,
+    pub maybe: Vec<UserId>,
+    pub late: Vec<UserId>,
+    pub no: Vec<UserId>,
 }
 
 impl StorageManager {
@@ -71,22 +74,36 @@ impl StorageManager {
 
     fn query_result_to_summary(query_output: QueryOutput) -> PostReactionsDto {
         let mut summary = PostReactionsDto {
-            yes: Box::default(),
-            maybe: Box::default(),
-            late: Box::default(),
-            no: Box::default(),
+            yes: Vec::new(),
+            maybe: Vec::new(),
+            late: Vec::new(),
+            no: Vec::new(),
         };
         for item in query_output.items {
             for record in item {
-                let post_id = record.get("post_id").unwrap().as_s().unwrap();
-                let user_id = record.get("user_id").unwrap().as_s().unwrap();
-                let response = record.get("response").unwrap().as_s().unwrap();
-                println!("{:?}:{:?}:{:?}", post_id, user_id, response);
-                // TODO: update the values in the summary
+                // let post_id = record.get("post_id").unwrap().as_s().unwrap();
+                let user_id: UserId = UserId(
+                    record
+                        .get("user_id")
+                        .unwrap()
+                        .as_s()
+                        .unwrap()
+                        .parse()
+                        .unwrap(),
+                );
+                // TODO: This isn't currently serialising out to string yet, check what the actual value of the underlying string is..
+                let response =
+                    GamerResponseOption::from_str(record.get("response").unwrap().as_s().unwrap())
+                        .unwrap();
+                match response {
+                    GamerResponseOption::Yes => summary.yes.push(user_id),
+                    GamerResponseOption::Maybe => summary.maybe.push(user_id),
+                    GamerResponseOption::Late => summary.late.push(user_id),
+                    GamerResponseOption::No => summary.no.push(user_id),
+                }
             }
         }
         summary
-        // TODO: iterate over the query results and produce values for this
     }
 }
 
