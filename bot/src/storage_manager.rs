@@ -91,11 +91,17 @@ impl StorageManager {
                         .parse()
                         .unwrap(),
                 );
-                // TODO: This isn't currently serialising out to string yet, check what the actual value of the underlying string is..
-                let response =
-                    GamerResponseOption::from_str(record.get("response").unwrap().as_s().unwrap())
-                        .unwrap();
-                match response {
+                match GamerResponseOption::from_str(
+                    record
+                        .get("response")
+                        .unwrap()
+                        .as_s()
+                        .unwrap()
+                        .to_lowercase()
+                        .as_str(),
+                )
+                .unwrap()
+                {
                     GamerResponseOption::Yes => summary.yes.push(user_id),
                     GamerResponseOption::Maybe => summary.maybe.push(user_id),
                     GamerResponseOption::Late => summary.late.push(user_id),
