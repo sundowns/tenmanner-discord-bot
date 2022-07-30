@@ -1,3 +1,4 @@
+use crate::storage_manager::PostReactionsDto;
 use crate::util::{
     add_mention_to_response_list, get_response_type_from_heading, strip_mention_from_response_lists,
 };
@@ -215,35 +216,11 @@ pub async fn build_reaction_data(
 
 // Count reactions in each field.
 // Sum all reactions, compare to thresholds and update embed colour accordingly
-pub async fn summarise_reactions(
-    reactions: Vec<(String, String, bool)>,
-) -> Result<LobbySignupSummary, ReactionsError> {
-    let mut summary = LobbySignupSummary::default();
-
-    for (name, value, _inline) in reactions.into_iter() {
-        let count_for_field = if value == DEFAULT_LIST_STRING {
-            0
-        } else {
-            value.matches('@').count()
-        };
-        if let Ok(option_type) = get_response_type_from_heading(name) {
-            match option_type {
-                GamerResponseOption::Yes => {
-                    summary.yes = count_for_field;
-                }
-                GamerResponseOption::Maybe => {
-                    summary.maybe = count_for_field;
-                }
-                GamerResponseOption::Late => {
-                    summary.late = count_for_field;
-                }
-                GamerResponseOption::No => {
-                    summary.no = count_for_field;
-                }
-            }
-        } else {
-            return Err(ReactionsError::ParseHeadingError);
-        }
+pub fn summarise_reactions(reactions: PostReactionsDto) -> LobbySignupSummary {
+    LobbySignupSummary {
+        yes: reactions.yes.len(),
+        maybe: reactions.maybe.len(),
+        late: reactions.late.len(),
+        no: reactions.no.len(),
     }
-    return Ok(summary);
 }

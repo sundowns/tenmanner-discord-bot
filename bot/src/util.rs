@@ -11,6 +11,7 @@ use serenity::builder::CreateEmbed;
 use serenity::prelude::*;
 
 use crate::reactions::{GamerResponseOption, LobbySignupSummary, LobbyStatus, ReactionsError};
+use crate::storage_manager::PostReactionsDto;
 use crate::DEFAULT_LIST_STRING;
 
 pub async fn react_to_message(ctx: &Context, message: &Message, emoji_id: u64, emoji_name: String) {
@@ -152,7 +153,7 @@ pub fn to_tuple(from: EmbedField) -> (String, String, bool) {
 pub async fn update_message_embed(
     ctx: &Context,
     mut message: Message,
-    response_data: Vec<(String, String, bool)>,
+    response_data: PostReactionsDto,
     summary: LobbySignupSummary,
 ) -> Result<(), SerenityError> {
     let status = LobbyStatus::from(summary);
@@ -160,41 +161,67 @@ pub async fn update_message_embed(
     existing_embed.fields = vec![];
     let embed_colour = status.colour();
 
-    let data_with_count_in_headings = add_count_to_response_headings(response_data, summary);
+    let embed_data = convert_response_data_to_embed_fields(response_data, summary);
     // replace the new_data with the updated one
     return message
         .edit(&ctx.http, |f| {
             f.embed(|e| {
                 *e = CreateEmbed::from(existing_embed);
                 e.colour(embed_colour)
-                    .fields(data_with_count_in_headings)
+                    .fields(embed_data)
                     .thumbnail("attachment://jonadello.png")
             })
         })
         .await;
 }
 
-fn add_count_to_response_headings(
-    response_data: Vec<(String, String, bool)>,
+fn user_ids_to_mentions(ids: Vec<UserId>) -> String {
+    // TODO: convert the list of user ID values to a string with discord mentions
+    String::from("placeholder")
+}
+
+fn convert_response_data_to_embed_fields(
+    response_data: PostReactionsDto,
     summary: LobbySignupSummary,
 ) -> Vec<(String, String, bool)> {
-    let mut new_data: Vec<(String, String, bool)> = vec![];
-    for (name, value, inline) in response_data {
-        if let Ok(response_type) = get_response_type_from_heading(name.clone()) {
-            new_data.push((
-                format!(
-                    "{}   [{}]",
-                    response_type.heading(),
-                    summary.value_for_response_type(response_type)
-                ),
-                value,
-                inline,
-            ));
-        } else {
-            new_data.push((name, value, inline));
-        }
-    }
-    new_data
+    vec![
+        (
+            format!(
+                "{}   [{}]",
+                GamerResponseOption::Yes.heading(),
+                summary.value_for_response_type(GamerResponseOption::Yes)
+            ),
+            user_ids_to_mentions(response_data.yes),
+            false,
+        ),
+        (
+            format!(
+                "{}   [{}]",
+                GamerResponseOption::Maybe.heading(),
+                summary.value_for_response_type(GamerResponseOption::Maybe)
+            ),
+            user_ids_to_mentions(response_data.maybe),
+            false,
+        ),
+        (
+            format!(
+                "{}   [{}]",
+                GamerResponseOption::Late.heading(),
+                summary.value_for_response_type(GamerResponseOption::Late)
+            ),
+            user_ids_to_mentions(response_data.late),
+            false,
+        ),
+        (
+            format!(
+                "{}   [{}]",
+                GamerResponseOption::No.heading(),
+                summary.value_for_response_type(GamerResponseOption::No)
+            ),
+            user_ids_to_mentions(response_data.no),
+            false,
+        ),
+    ]
 }
 
 // This is a hack and I'm sure I can do it on the enum but fuck u and fuck this ok

@@ -16,7 +16,7 @@ pub struct StorageManager {
     table_name: String,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct PostReactionsDto {
     pub yes: Vec<UserId>,
     pub maybe: Vec<UserId>,

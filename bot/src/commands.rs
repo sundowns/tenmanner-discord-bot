@@ -182,8 +182,12 @@ impl CommandRunner {
                         .get_reactions_for_post(reaction.message.id.to_string())
                         .await
                     {
-                        dbg!(result);
-                        // TODO: actually set the values of the post using this result
+                        let summary = summarise_reactions(result.clone());
+                        if let Err(message) =
+                            update_message_embed(ctx, reaction.message, result, summary).await
+                        {
+                            println!("Error {:?}", message);
+                        }
                     } else {
                         println!("Failed to fetch data from dynamo table")
                     }
@@ -199,16 +203,6 @@ impl CommandRunner {
                     .await;
                 }
             };
-            // TODO: Remove below when replaced by the dynamo query result
-            if let Ok(responses) = build_reaction_data(reaction.clone(), response).await {
-                if let Ok(signup_summary) = summarise_reactions(responses.clone()).await {
-                    if let Err(message) =
-                        update_message_embed(ctx, reaction.message, responses, signup_summary).await
-                    {
-                        println!("Error {:?}", message);
-                    }
-                }
-            }
         } else {
             respond_to_signup_interaction(ctx, &reaction, "Failed :c").await;
         }
