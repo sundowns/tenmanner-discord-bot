@@ -1,7 +1,5 @@
 use crate::config::AppConfig;
-use crate::reactions::{
-    build_reaction_data, summarise_reactions, GamerResponseOption, LobbyStatus,
-};
+use crate::reactions::{summarise_reactions, GamerResponseOption, LobbyStatus};
 use crate::storage_manager::StorageManager;
 use crate::util::{respond_to_signup_interaction, respond_to_slash_command, update_message_embed};
 use crate::DEFAULT_LIST_STRING;

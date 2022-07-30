@@ -1,12 +1,8 @@
 use crate::storage_manager::PostReactionsDto;
-use crate::util::{
-    add_mention_to_response_list, get_response_type_from_heading, strip_mention_from_response_lists,
-};
-use crate::DEFAULT_LIST_STRING;
 use serenity::builder::{CreateActionRow, CreateButton};
-use serenity::model::interactions::message_component::{ButtonStyle, MessageComponentInteraction};
+use serenity::model::interactions::message_component::ButtonStyle;
 use serenity::utils::Colour;
-use std::{error::Error, fmt, str::FromStr, vec};
+use std::{error::Error, fmt, str::FromStr};
 
 #[derive(Debug)]
 pub enum ReactionsError {
@@ -188,30 +184,6 @@ impl fmt::Display for LobbyStatus {
             Self::Empty => write!(f, "Empty"),
         }
     }
-}
-
-pub async fn build_reaction_data(
-    reaction: MessageComponentInteraction,
-    option: GamerResponseOption,
-) -> Result<Vec<(String, String, bool)>, ReactionsError> {
-    let mut existing_embed = reaction.message.embeds[0].clone();
-    let existing_fields = existing_embed.fields.clone();
-    existing_embed.fields = vec![];
-    // let mut message = reaction.message;
-
-    // User doesn't exist in this list
-    if !existing_fields[option.field_index()]
-        .value
-        .contains(&reaction.user.id.to_string())
-    {
-        let stripped_data =
-            strip_mention_from_response_lists(existing_fields.clone(), reaction.user.id).await;
-        let data_with_new_user =
-            add_mention_to_response_list(stripped_data, option, reaction.user.id).await;
-
-        return Ok(data_with_new_user);
-    }
-    return Err(ReactionsError::NoUpdateRequired);
 }
 
 // Count reactions in each field.

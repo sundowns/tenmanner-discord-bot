@@ -39,7 +39,6 @@ Run the [AWS CDK](https://docs.aws.amazon.com/cdk/v2/guide/home.html)
 
 ## Outstanding work / TODO
 
-- [MVP] Read all of a posts' reactions from dynamo table
 - [DEPLOYMENT] Create and upload machine image to ECR
 - [DEPLOYMENT] Deploy EC2 instance and autostart bot (with userdata file)
 - [DEPLOYMENT] Provide config for bot deployment
